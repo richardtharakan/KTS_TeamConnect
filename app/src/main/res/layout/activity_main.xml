@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#EEF2F7">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <LinearLayout
+            android:id="@+id/loginBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:background="#FFFFFF"
+            android:padding="22dp"
+            android:layout_marginTop="40dp"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="KTS Connect Team"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                android:textColor="#071E3D"
+                android:gravity="center"
+                android:layout_marginBottom="6dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Role Access"
+                android:textSize="16sp"
+                android:textColor="#5B6472"
+                android:gravity="center"
+                android:layout_marginBottom="22dp" />
+
+            <EditText
+                android:id="@+id/rolePinInput"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter PIN"
+                android:inputType="numberPassword"
+                android:background="#F5F7FA"
+                android:padding="14dp"
+                android:layout_marginBottom="14dp" />
+
+            <Button
+                android:id="@+id/enterBossButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enter as Boss"
+                android:layout_marginBottom="10dp" />
+
+            <Button
+                android:id="@+id/enterManagerButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Enter as Manager"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:id="@+id/loginStatusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Test PINs: Boss 1234 / Manager 1111"
+                android:textSize="14sp"
+                android:textColor="#6B7280"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/appContentBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/companyTitleText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Global Plaza"
+                android:textSize="30sp"
+                android:textStyle="bold"
+                android:textColor="#071E3D"
+                android:gravity="center"
+                android:layout_marginBottom="4dp" />
+
+            <TextView
+                android:id="@+id/subtitleText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="KTS Connect Team MVP"
+                android:textSize="15sp"
+                android:textColor="#5B6472"
+                android:gravity="center"
+                android:layout_marginBottom="12dp" />
+
+            <TextView
+                android:id="@+id/modeBadgeText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Mode loading..."
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:textColor="#071E3D"
+                android:gravity="center"
+                android:background="#FFFFFF"
+                android:padding="12dp"
+                android:layout_marginBottom="14dp" />
+
+            <Button
+                android:id="@+id/logoutButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Logout / Switch User"
+                android:layout_marginBottom="14dp" />
+
+            <TextView
+                android:id="@+id/dashboardSummaryText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Dashboard summary loading..."
+                android:textSize="18sp"
+                android:textColor="#111827"
+                android:background="#FFFFFF"
+                android:padding="18dp"
+                android:lineSpacingExtra="6dp"
+                android:layout_marginBottom="16dp" />
+
+            <LinearLayout
+                android:id="@+id/managerActionBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#FFFFFF"
+                android:padding="18dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Manager Attendance"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="#071E3D"
+                    android:layout_marginBottom="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/checkInButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Check In"
+                        android:layout_marginEnd="6dp" />
+
+                    <Button
+                        android:id="@+id/checkOutButton"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Check Out"
+                        android:layout_marginStart="6dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/assignTaskBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#FFFFFF"
+                android:padding="18dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Boss Control Panel"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="#071E3D"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Assign a new task to Manager 1"
+                    android:textSize="14sp"
+                    android:textColor="#6B7280"
+                    android:layout_marginBottom="14dp" />
+
+                <EditText
+                    android:id="@+id/taskTitleInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Task title"
+                    android:inputType="text"
+                    android:background="#F5F7FA"
+                    android:padding="14dp"
+                    android:layout_marginBottom="10dp" />
+
+                <EditText
+                    android:id="@+id/taskDescriptionInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Task description"
+                    android:inputType="textMultiLine"
+                    android:minLines="2"
+                    android:background="#F5F7FA"
+                    android:padding="14dp"
+                    android:layout_marginBottom="10dp" />
+
+                <Spinner
+                    android:id="@+id/taskPrioritySpinner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#F5F7FA"
+                    android:padding="14dp"
+                    android:layout_marginBottom="10dp" />
+
+                <EditText
+                    android:id="@+id/taskDueDateInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Select due date"
+                    android:inputType="none"
+                    android:focusable="false"
+                    android:clickable="true"
+                    android:background="#F5F7FA"
+                    android:padding="14dp"
+                    android:layout_marginBottom="12dp" />
+
+                <Button
+                    android:id="@+id/assignTaskButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Assign Task to Manager 1" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/managerCardText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Manager details loading..."
+                android:textSize="17sp"
+                android:textColor="#111827"
+                android:background="#FFFFFF"
+                android:padding="18dp"
+                android:lineSpacingExtra="5dp"
+                android:layout_marginBottom="14dp" />
+
+            <TextView
+                android:id="@+id/attendanceCardText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Today's attendance loading..."
+                android:textSize="16sp"
+                android:textColor="#111827"
+                android:background="#FFFFFF"
+                android:padding="18dp"
+                android:lineSpacingExtra="5dp"
+                android:layout_marginBottom="14dp" />
+
+            <TextView
+                android:id="@+id/attendanceHistoryText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Attendance history loading..."
+                android:textSize="15sp"
+                android:textColor="#111827"
+                android:background="#FFFFFF"
+                android:padding="18dp"
+                android:lineSpacingExtra="5dp"
+                android:layout_marginBottom="14dp" />
+
+            <TextView
+                android:id="@+id/currentTaskText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Current task loading..."
+                android:textSize="16sp"
+                android:textColor="#111827"
+                android:background="#FFFFFF"
+                android:padding="18dp"
+                android:lineSpacingExtra="5dp"
+                android:layout_marginBottom="14dp" />
+
+            <TextView
+                android:id="@+id/taskSummaryText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Task summary loading..."
+                android:textSize="16sp"
+                android:textColor="#111827"
+                android:background="#FFFFFF"
+                android:padding="18dp"
+                android:lineSpacingExtra="5dp"
+                android:layout_marginBottom="14dp" />
+
+            <LinearLayout
+                android:id="@+id/taskFilterBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="#FFFFFF"
+                android:padding="14dp"
+                android:layout_marginBottom="14dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Task Filters"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#071E3D"
+                    android:layout_marginBottom="10dp" />
+
+                <Button
+                    android:id="@+id/filterAllButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Show All Tasks"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/filterPendingButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Show Pending Only"
+                    android:layout_marginBottom="8dp" />
+
+                <Button
+                    android:id="@+id/filterCompletedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Show Completed Only" />
+
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Task List"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#071E3D"
+                android:layout_marginBottom="10dp" />
+
+            <LinearLayout
+                android:id="@+id/taskListContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginBottom="18dp" />
+
+            <Button
+                android:id="@+id/reassignTaskButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Boss Set Current Task Pending"
+                android:layout_marginBottom="16dp" />
+
+            <TextView
+                android:id="@+id/statusText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Live sync starting..."
+                android:textSize="14sp"
+                android:textColor="#5B6472"
+                android:gravity="center"
+                android:paddingBottom="18dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
