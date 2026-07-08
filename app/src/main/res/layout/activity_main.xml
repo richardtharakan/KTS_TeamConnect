@@ -25,14 +25,6 @@
         android:alpha="0.25"
         android:background="#14B8A6" />
 
-    <View
-        android:id="@+id/glowMiddle"
-        android:layout_width="190dp"
-        android:layout_height="190dp"
-        android:layout_gravity="center"
-        android:alpha="0.10"
-        android:background="#FFFFFF" />
-
     <ScrollView
         android:id="@+id/mainScroll"
         android:layout_width="match_parent"
@@ -50,7 +42,7 @@
             android:paddingEnd="16dp"
             android:paddingBottom="28dp">
 
-            <!-- LOGIN SECTION -->
+            <!-- LOGIN -->
             <LinearLayout
                 android:id="@+id/loginSection"
                 android:layout_width="match_parent"
@@ -59,7 +51,6 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/loginAppTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
@@ -69,7 +60,6 @@
                     android:textStyle="bold" />
 
                 <TextView
-                    android:id="@+id/loginAppSubtitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
@@ -95,11 +85,10 @@
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/loginHintText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="Boss uses 1234. Managers use their own PIN."
+                        android:text="Boss: 1234. Managers use their own PIN."
                         android:textColor="#AFC1D8"
                         android:textSize="14sp" />
 
@@ -121,7 +110,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
                         android:layout_marginTop="16dp"
-                        android:textAllCaps="false"
                         android:text="Login as Boss"
                         android:textColor="#FFFFFF"
                         android:textStyle="bold" />
@@ -131,7 +119,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
                         android:layout_marginTop="10dp"
-                        android:textAllCaps="false"
                         android:text="Login as Manager"
                         android:textColor="#FFFFFF"
                         android:textStyle="bold" />
@@ -149,13 +136,12 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Businesses Added"
+                        android:text="Businesses"
                         android:textColor="#FFFFFF"
                         android:textSize="17sp"
                         android:textStyle="bold" />
 
                     <TextView
-                        android:id="@+id/loginBusinessListText"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
@@ -168,9 +154,9 @@
 
             </LinearLayout>
 
-            <!-- BOSS SECTION -->
+            <!-- BOSS HOME -->
             <LinearLayout
-                android:id="@+id/bossSection"
+                android:id="@+id/bossHomeSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
@@ -196,7 +182,6 @@
                             android:orientation="vertical">
 
                             <TextView
-                                android:id="@+id/bossTitleText"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="Boss Dashboard"
@@ -228,7 +213,6 @@
                             android:id="@+id/bossLogoutButton"
                             android:layout_width="92dp"
                             android:layout_height="40dp"
-                            android:textAllCaps="false"
                             android:text="Logout"
                             android:textColor="#FFFFFF"
                             android:textSize="12sp"
@@ -265,7 +249,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:text="Manager: Hrishikesh"
+                        android:text="Manager"
                         android:textColor="#D8E5F7"
                         android:textSize="14sp" />
 
@@ -467,27 +451,17 @@
                         android:textColorHint="#AFC1D8"
                         android:textSize="15sp" />
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="Priority"
-                        android:textColor="#AFC1D8"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
                     <Spinner
                         android:id="@+id/bossPrioritySpinner"
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
-                        android:layout_marginTop="6dp" />
+                        android:layout_marginTop="12dp" />
 
                     <Button
                         android:id="@+id/bossDueDateButton"
                         android:layout_width="match_parent"
                         android:layout_height="50dp"
                         android:layout_marginTop="10dp"
-                        android:textAllCaps="false"
                         android:text="Due Date"
                         android:textColor="#FFFFFF"
                         android:textStyle="bold" />
@@ -497,7 +471,6 @@
                         android:layout_width="match_parent"
                         android:layout_height="52dp"
                         android:layout_marginTop="14dp"
-                        android:textAllCaps="false"
                         android:text="Assign Task"
                         android:textColor="#FFFFFF"
                         android:textStyle="bold" />
@@ -505,7 +478,7 @@
                 </LinearLayout>
 
                 <LinearLayout
-                    android:id="@+id/bossFilterCard"
+                    android:id="@+id/bossNavCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
@@ -515,65 +488,38 @@
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="Task Filters"
-                        android:textColor="#FFFFFF"
-                        android:textSize="18sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:text="Status"
-                        android:textColor="#AFC1D8"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                    <Spinner
-                        android:id="@+id/bossStatusFilterSpinner"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="6dp" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="Priority"
-                        android:textColor="#AFC1D8"
-                        android:textSize="13sp"
-                        android:textStyle="bold" />
-
-                    <Spinner
-                        android:id="@+id/bossPriorityFilterSpinner"
-                        android:layout_width="match_parent"
-                        android:layout_height="50dp"
-                        android:layout_marginTop="6dp" />
-
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/bossTasksCard"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="Assigned Tasks"
+                        android:text="Open Details"
                         android:textColor="#FFFFFF"
                         android:textSize="18sp"
                         android:textStyle="bold" />
 
                     <LinearLayout
-                        android:id="@+id/bossTaskList"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:orientation="vertical" />
+                        android:layout_marginTop="14dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/bossOpenTaskListButton"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:text="Task List"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/bossOpenAttendanceButton"
+                            android:layout_width="0dp"
+                            android:layout_height="48dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:text="Attendance"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 
@@ -604,7 +550,271 @@
 
             </LinearLayout>
 
-            <!-- MANAGER SECTION -->
+            <!-- BOSS TASK LIST SCREEN -->
+            <LinearLayout
+                android:id="@+id/bossTaskListSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/taskListHeaderCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <Button
+                        android:id="@+id/taskListBackButton"
+                        android:layout_width="100dp"
+                        android:layout_height="40dp"
+                        android:text="← Back"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="Task List"
+                        android:textColor="#FFFFFF"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/taskListBusinessText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:text="Business"
+                        android:textColor="#AFC1D8"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/taskListFilterCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Filters"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/bossStatusFilterSpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="12dp" />
+
+                    <Spinner
+                        android:id="@+id/bossPriorityFilterSpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="10dp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/bossTasksCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:id="@+id/bossTaskList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- BOSS ATTENDANCE SCREEN -->
+            <LinearLayout
+                android:id="@+id/bossAttendanceSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/attendanceHeaderCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <Button
+                        android:id="@+id/attendanceBackButton"
+                        android:layout_width="100dp"
+                        android:layout_height="40dp"
+                        android:text="← Back"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="Attendance"
+                        android:textColor="#FFFFFF"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="5dp"
+                        android:text="Monthly calendar, leave approvals and consolidation"
+                        android:textColor="#AFC1D8"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/attendanceControlCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Select Manager"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/bossAttendanceManagerSpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="12dp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/bossAttendancePrevMonthButton"
+                            android:layout_width="48dp"
+                            android:layout_height="42dp"
+                            android:text="‹"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/bossAttendanceMonthText"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:text="Month"
+                            android:textColor="#FFFFFF"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/bossAttendanceNextMonthButton"
+                            android:layout_width="48dp"
+                            android:layout_height="42dp"
+                            android:text="›"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/attendanceLegendCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:lineSpacingExtra="4dp"
+                        android:text="● Green = Full Day     ● Yellow = Half Day\n● Red = Absent          ● Blue = Paid Leave\nSunday is ignored. 2 paid leaves per month."
+                        android:textColor="#D8E5F7"
+                        android:textSize="13sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/attendanceCalendarCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="12dp">
+
+                    <LinearLayout
+                        android:id="@+id/bossAttendanceCalendarGrid"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:id="@+id/bossAttendanceSummaryText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:lineSpacingExtra="4dp"
+                        android:text="Summary"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/bossLeaveRequestsCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Leave Requests"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/bossPendingLeaveList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- MANAGER SCREEN -->
             <LinearLayout
                 android:id="@+id/managerSection"
                 android:layout_width="match_parent"
@@ -632,7 +842,6 @@
                             android:orientation="vertical">
 
                             <TextView
-                                android:id="@+id/managerTitleText"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="Manager Dashboard"
@@ -664,7 +873,6 @@
                             android:id="@+id/managerLogoutButton"
                             android:layout_width="92dp"
                             android:layout_height="40dp"
-                            android:textAllCaps="false"
                             android:text="Logout"
                             android:textColor="#FFFFFF"
                             android:textSize="12sp"
@@ -721,7 +929,6 @@
                             android:layout_height="44dp"
                             android:layout_marginEnd="6dp"
                             android:layout_weight="1"
-                            android:textAllCaps="false"
                             android:text="Check In"
                             android:textColor="#FFFFFF"
                             android:textStyle="bold" />
@@ -732,12 +939,138 @@
                             android:layout_height="44dp"
                             android:layout_marginStart="6dp"
                             android:layout_weight="1"
-                            android:textAllCaps="false"
                             android:text="Check Out"
                             android:textColor="#FFFFFF"
                             android:textStyle="bold" />
 
                     </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/managerPrevMonthButton"
+                            android:layout_width="48dp"
+                            android:layout_height="42dp"
+                            android:text="‹"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/managerMonthText"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:text="Month"
+                            android:textColor="#FFFFFF"
+                            android:textSize="18sp"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/managerNextMonthButton"
+                            android:layout_width="48dp"
+                            android:layout_height="42dp"
+                            android:text="›"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/managerAttendanceCalendarGrid"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical" />
+
+                    <TextView
+                        android:id="@+id/managerAttendanceSummaryText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:lineSpacingExtra="4dp"
+                        android:text="Summary"
+                        android:textColor="#FFFFFF"
+                        android:textSize="15sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/managerLeaveApplyCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Apply for Leave"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/managerLeaveDateButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="12dp"
+                        android:text="Select Leave Date"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/managerLeaveReasonInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="80dp"
+                        android:layout_marginTop="10dp"
+                        android:gravity="top"
+                        android:hint="Reason / note"
+                        android:inputType="textMultiLine"
+                        android:padding="14dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#AFC1D8"
+                        android:textSize="15sp" />
+
+                    <Button
+                        android:id="@+id/managerApplyLeaveButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="12dp"
+                        android:text="Submit Leave Request"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/managerLeaveStatusCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="My Leave Requests"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/managerLeaveList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical" />
 
                 </LinearLayout>
 

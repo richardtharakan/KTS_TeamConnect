@@ -50,8 +50,13 @@ public class MainActivity extends Activity {
 
     private static final String ROLE_BOSS = "boss";
     private static final String ROLE_MANAGER = "manager";
-
     private static final String BOSS_PIN = "1234";
+
+    private static final int CUTOFF_HOUR = 10;
+    private static final int CUTOFF_MINUTE = 0;
+    private static final int END_HOUR = 17;
+    private static final int END_MINUTE = 0;
+    private static final long SEVEN_HOURS_MILLIS = 7L * 60L * 60L * 1000L;
 
     private final BusinessInfo[] businesses = new BusinessInfo[]{
             new BusinessInfo("global_plaza", "Global Plaza", "manager_global_plaza", "Hrishikesh", "1111"),
@@ -65,7 +70,9 @@ public class MainActivity extends Activity {
     private ScrollView mainScroll;
 
     private LinearLayout loginSection;
-    private LinearLayout bossSection;
+    private LinearLayout bossHomeSection;
+    private LinearLayout bossTaskListSection;
+    private LinearLayout bossAttendanceSection;
     private LinearLayout managerSection;
 
     private EditText loginPinInput;
@@ -89,10 +96,24 @@ public class MainActivity extends Activity {
     private Button bossDueDateButton;
     private Button bossAssignTaskButton;
 
+    private Button bossOpenTaskListButton;
+    private Button bossOpenAttendanceButton;
+    private LinearLayout bossActivityList;
+
+    private Button taskListBackButton;
+    private TextView taskListBusinessText;
     private Spinner bossStatusFilterSpinner;
     private Spinner bossPriorityFilterSpinner;
     private LinearLayout bossTaskList;
-    private LinearLayout bossActivityList;
+
+    private Button attendanceBackButton;
+    private Spinner bossAttendanceManagerSpinner;
+    private TextView bossAttendanceMonthText;
+    private Button bossAttendancePrevMonthButton;
+    private Button bossAttendanceNextMonthButton;
+    private LinearLayout bossAttendanceCalendarGrid;
+    private TextView bossAttendanceSummaryText;
+    private LinearLayout bossPendingLeaveList;
 
     private TextView managerBusinessText;
     private TextView managerDateText;
@@ -102,20 +123,47 @@ public class MainActivity extends Activity {
     private Button managerCheckInButton;
     private Button managerCheckOutButton;
 
+    private TextView managerMonthText;
+    private Button managerPrevMonthButton;
+    private Button managerNextMonthButton;
+    private LinearLayout managerAttendanceCalendarGrid;
+    private TextView managerAttendanceSummaryText;
+
+    private Button managerLeaveDateButton;
+    private EditText managerLeaveReasonInput;
+    private Button managerApplyLeaveButton;
+    private LinearLayout managerLeaveList;
+
     private TextView managerPendingCount;
     private TextView managerCompletedCount;
     private Spinner managerStatusFilterSpinner;
     private LinearLayout managerTaskList;
 
-    private ListenerRegistration taskListener;
-    private ListenerRegistration attendanceListener;
-    private ListenerRegistration bossStatsTaskListener;
-    private ListenerRegistration bossStatsAttendanceListener;
-    private ListenerRegistration activityListener;
+    private ListenerRegistration homeTaskStatsListener;
+    private ListenerRegistration homeAttendanceStatsListener;
+    private ListenerRegistration homeActivityListener;
+    private ListenerRegistration bossTaskListListener;
+    private ListenerRegistration bossAttendanceListener;
+    private ListenerRegistration bossLeaveListener;
+    private ListenerRegistration managerAttendanceStatusListener;
+    private ListenerRegistration managerAttendanceMonthListener;
+    private ListenerRegistration managerLeaveListener;
+    private ListenerRegistration managerTaskListener;
 
     private BusinessInfo selectedBossBusiness;
+    private BusinessInfo selectedBossAttendanceBusiness;
     private BusinessInfo loggedManagerBusiness;
+
     private Calendar selectedDueDate;
+    private Calendar bossAttendanceMonth;
+    private Calendar managerAttendanceMonth;
+    private Calendar selectedManagerLeaveDate;
+
+    private final Map<String, AttendanceRecord> bossAttendanceMap = new HashMap<>();
+    private final ArrayList<LeaveRequest> bossLeaveRequests = new ArrayList<>();
+
+    private final Map<String, AttendanceRecord> managerAttendanceMap = new HashMap<>();
+    private final ArrayList<LeaveRequest> managerLeaveRequests = new ArrayList<>();
 
     private final int WHITE = Color.WHITE;
     private final int TEXT_LIGHT = Color.parseColor("#EAF2FF");
@@ -126,6 +174,7 @@ public class MainActivity extends Activity {
     private final int ORANGE = Color.parseColor("#F97316");
     private final int PURPLE = Color.parseColor("#7C3AED");
     private final int CYAN = Color.parseColor("#06B6D4");
+    private final int GREY = Color.parseColor("#94A3B8");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -139,11 +188,17 @@ public class MainActivity extends Activity {
         setupSpinners();
         setupClickListeners();
 
+        selectedDueDate = Calendar.getInstance();
+        selectedDueDate.add(Calendar.DAY_OF_MONTH, 1);
+
+        bossAttendanceMonth = firstDayOfCurrentMonth();
+        managerAttendanceMonth = firstDayOfCurrentMonth();
+
         String savedRole = getPrefs().getString(KEY_ROLE, "");
         String savedBusinessId = getPrefs().getString(KEY_BUSINESS_ID, "");
 
         if (ROLE_BOSS.equals(savedRole)) {
-            showBossDashboard();
+            showBossHome();
         } else if (ROLE_MANAGER.equals(savedRole)) {
             BusinessInfo business = findBusinessById(savedBusinessId);
             if (business != null) {
@@ -161,7 +216,9 @@ public class MainActivity extends Activity {
         mainScroll = findViewById(R.id.mainScroll);
 
         loginSection = findViewById(R.id.loginSection);
-        bossSection = findViewById(R.id.bossSection);
+        bossHomeSection = findViewById(R.id.bossHomeSection);
+        bossTaskListSection = findViewById(R.id.bossTaskListSection);
+        bossAttendanceSection = findViewById(R.id.bossAttendanceSection);
         managerSection = findViewById(R.id.managerSection);
 
         loginPinInput = findViewById(R.id.loginPinInput);
@@ -185,10 +242,24 @@ public class MainActivity extends Activity {
         bossDueDateButton = findViewById(R.id.bossDueDateButton);
         bossAssignTaskButton = findViewById(R.id.bossAssignTaskButton);
 
+        bossOpenTaskListButton = findViewById(R.id.bossOpenTaskListButton);
+        bossOpenAttendanceButton = findViewById(R.id.bossOpenAttendanceButton);
+        bossActivityList = findViewById(R.id.bossActivityList);
+
+        taskListBackButton = findViewById(R.id.taskListBackButton);
+        taskListBusinessText = findViewById(R.id.taskListBusinessText);
         bossStatusFilterSpinner = findViewById(R.id.bossStatusFilterSpinner);
         bossPriorityFilterSpinner = findViewById(R.id.bossPriorityFilterSpinner);
         bossTaskList = findViewById(R.id.bossTaskList);
-        bossActivityList = findViewById(R.id.bossActivityList);
+
+        attendanceBackButton = findViewById(R.id.attendanceBackButton);
+        bossAttendanceManagerSpinner = findViewById(R.id.bossAttendanceManagerSpinner);
+        bossAttendanceMonthText = findViewById(R.id.bossAttendanceMonthText);
+        bossAttendancePrevMonthButton = findViewById(R.id.bossAttendancePrevMonthButton);
+        bossAttendanceNextMonthButton = findViewById(R.id.bossAttendanceNextMonthButton);
+        bossAttendanceCalendarGrid = findViewById(R.id.bossAttendanceCalendarGrid);
+        bossAttendanceSummaryText = findViewById(R.id.bossAttendanceSummaryText);
+        bossPendingLeaveList = findViewById(R.id.bossPendingLeaveList);
 
         managerBusinessText = findViewById(R.id.managerBusinessText);
         managerDateText = findViewById(R.id.managerDateText);
@@ -198,6 +269,17 @@ public class MainActivity extends Activity {
         managerCheckInButton = findViewById(R.id.managerCheckInButton);
         managerCheckOutButton = findViewById(R.id.managerCheckOutButton);
 
+        managerMonthText = findViewById(R.id.managerMonthText);
+        managerPrevMonthButton = findViewById(R.id.managerPrevMonthButton);
+        managerNextMonthButton = findViewById(R.id.managerNextMonthButton);
+        managerAttendanceCalendarGrid = findViewById(R.id.managerAttendanceCalendarGrid);
+        managerAttendanceSummaryText = findViewById(R.id.managerAttendanceSummaryText);
+
+        managerLeaveDateButton = findViewById(R.id.managerLeaveDateButton);
+        managerLeaveReasonInput = findViewById(R.id.managerLeaveReasonInput);
+        managerApplyLeaveButton = findViewById(R.id.managerApplyLeaveButton);
+        managerLeaveList = findViewById(R.id.managerLeaveList);
+
         managerPendingCount = findViewById(R.id.managerPendingCount);
         managerCompletedCount = findViewById(R.id.managerCompletedCount);
         managerStatusFilterSpinner = findViewById(R.id.managerStatusFilterSpinner);
@@ -206,11 +288,16 @@ public class MainActivity extends Activity {
 
     private void setupSpinners() {
         String[] businessNames = new String[businesses.length];
+        String[] managerNames = new String[businesses.length];
+
         for (int i = 0; i < businesses.length; i++) {
             businessNames[i] = businesses[i].businessName;
+            managerNames[i] = businesses[i].managerName + " — " + businesses[i].businessName;
         }
 
         setSpinnerItems(bossBusinessSpinner, businessNames);
+        setSpinnerItems(bossAttendanceManagerSpinner, managerNames);
+
         setSpinnerItems(bossPrioritySpinner, new String[]{"High", "Medium", "Low"});
         bossPrioritySpinner.setSelection(1);
 
@@ -221,10 +308,10 @@ public class MainActivity extends Activity {
         bossBusinessSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (bossSection.getVisibility() == View.VISIBLE) {
-                    BusinessInfo business = businesses[position];
-                    getPrefs().edit().putString(KEY_BOSS_BUSINESS_ID, business.businessId).apply();
-                    applyBossBusiness(business);
+                if (bossHomeSection.getVisibility() == View.VISIBLE) {
+                    selectedBossBusiness = businesses[position];
+                    getPrefs().edit().putString(KEY_BOSS_BUSINESS_ID, selectedBossBusiness.businessId).apply();
+                    applyBossHomeBusiness();
                 }
             }
 
@@ -233,11 +320,25 @@ public class MainActivity extends Activity {
             }
         });
 
-        AdapterView.OnItemSelectedListener bossFilterListener = new AdapterView.OnItemSelectedListener() {
+        bossAttendanceManagerSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                if (bossSection.getVisibility() == View.VISIBLE && selectedBossBusiness != null) {
-                    listenBossTasks(selectedBossBusiness);
+                if (bossAttendanceSection.getVisibility() == View.VISIBLE) {
+                    selectedBossAttendanceBusiness = businesses[position];
+                    startBossAttendanceScreenListeners();
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
+        AdapterView.OnItemSelectedListener taskFilterListener = new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (bossTaskListSection.getVisibility() == View.VISIBLE && selectedBossBusiness != null) {
+                    listenBossTaskList(selectedBossBusiness);
                 }
             }
 
@@ -246,8 +347,8 @@ public class MainActivity extends Activity {
             }
         };
 
-        bossStatusFilterSpinner.setOnItemSelectedListener(bossFilterListener);
-        bossPriorityFilterSpinner.setOnItemSelectedListener(bossFilterListener);
+        bossStatusFilterSpinner.setOnItemSelectedListener(taskFilterListener);
+        bossPriorityFilterSpinner.setOnItemSelectedListener(taskFilterListener);
 
         managerStatusFilterSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
@@ -275,7 +376,7 @@ public class MainActivity extends Activity {
                         .apply();
 
                 loginPinInput.setText("");
-                showBossDashboard();
+                showBossHome();
             } else {
                 toast("Wrong Boss PIN");
             }
@@ -303,11 +404,9 @@ public class MainActivity extends Activity {
         bossLogoutButton.setOnClickListener(v -> logout());
         managerLogoutButton.setOnClickListener(v -> logout());
 
-        bossDueDateButton.setOnClickListener(v -> openDueDatePicker());
+        bossDueDateButton.setOnClickListener(v -> openTaskDueDatePicker());
 
         bossAssignTaskButton.setOnClickListener(v -> {
-            hideKeyboard(bossTaskTitleInput);
-
             if (selectedBossBusiness == null) {
                 toast("Select business");
                 return;
@@ -325,6 +424,32 @@ public class MainActivity extends Activity {
             assignTask(selectedBossBusiness, title, details, priority);
         });
 
+        bossOpenTaskListButton.setOnClickListener(v -> showBossTaskListScreen());
+        bossOpenAttendanceButton.setOnClickListener(v -> showBossAttendanceScreen());
+
+        taskListBackButton.setOnClickListener(v -> showBossHome());
+        attendanceBackButton.setOnClickListener(v -> showBossHome());
+
+        bossAttendancePrevMonthButton.setOnClickListener(v -> {
+            bossAttendanceMonth.add(Calendar.MONTH, -1);
+            startBossAttendanceScreenListeners();
+        });
+
+        bossAttendanceNextMonthButton.setOnClickListener(v -> {
+            bossAttendanceMonth.add(Calendar.MONTH, 1);
+            startBossAttendanceScreenListeners();
+        });
+
+        managerPrevMonthButton.setOnClickListener(v -> {
+            managerAttendanceMonth.add(Calendar.MONTH, -1);
+            renderManagerAttendanceCalendar();
+        });
+
+        managerNextMonthButton.setOnClickListener(v -> {
+            managerAttendanceMonth.add(Calendar.MONTH, 1);
+            renderManagerAttendanceCalendar();
+        });
+
         managerCheckInButton.setOnClickListener(v -> {
             if (loggedManagerBusiness != null) {
                 updateAttendance(loggedManagerBusiness, true);
@@ -336,78 +461,138 @@ public class MainActivity extends Activity {
                 updateAttendance(loggedManagerBusiness, false);
             }
         });
+
+        managerLeaveDateButton.setOnClickListener(v -> openManagerLeaveDatePicker());
+
+        managerApplyLeaveButton.setOnClickListener(v -> {
+            if (loggedManagerBusiness != null) {
+                submitLeaveRequest(loggedManagerBusiness);
+            }
+        });
     }
 
     private void showLoginScreen() {
-        detachBusinessListeners();
+        detachAllListeners();
 
         loginSection.setVisibility(View.VISIBLE);
-        bossSection.setVisibility(View.GONE);
+        bossHomeSection.setVisibility(View.GONE);
+        bossTaskListSection.setVisibility(View.GONE);
+        bossAttendanceSection.setVisibility(View.GONE);
         managerSection.setVisibility(View.GONE);
 
         mainScroll.smoothScrollTo(0, 0);
     }
 
-    private void showBossDashboard() {
+    private void showBossHome() {
+        detachAllListeners();
+
         loginSection.setVisibility(View.GONE);
-        bossSection.setVisibility(View.VISIBLE);
+        bossHomeSection.setVisibility(View.VISIBLE);
+        bossTaskListSection.setVisibility(View.GONE);
+        bossAttendanceSection.setVisibility(View.GONE);
         managerSection.setVisibility(View.GONE);
+
+        bossDateText.setText(readableDate());
 
         selectedDueDate = Calendar.getInstance();
         selectedDueDate.add(Calendar.DAY_OF_MONTH, 1);
         bossDueDateButton.setText("Due: " + formatDate(selectedDueDate.getTime()));
 
-        bossDateText.setText(readableDate());
-
         String savedBossBusinessId = getPrefs().getString(KEY_BOSS_BUSINESS_ID, businesses[0].businessId);
-        int selectedIndex = findBusinessIndexById(savedBossBusinessId);
+        int index = findBusinessIndexById(savedBossBusinessId);
 
-        bossBusinessSpinner.setSelection(selectedIndex);
-        applyBossBusiness(businesses[selectedIndex]);
+        selectedBossBusiness = businesses[index];
+        bossBusinessSpinner.setSelection(index);
+        applyBossHomeBusiness();
+
+        mainScroll.smoothScrollTo(0, 0);
+    }
+
+    private void showBossTaskListScreen() {
+        detachAllListeners();
+
+        if (selectedBossBusiness == null) {
+            selectedBossBusiness = businesses[0];
+        }
+
+        loginSection.setVisibility(View.GONE);
+        bossHomeSection.setVisibility(View.GONE);
+        bossTaskListSection.setVisibility(View.VISIBLE);
+        bossAttendanceSection.setVisibility(View.GONE);
+        managerSection.setVisibility(View.GONE);
+
+        taskListBusinessText.setText(selectedBossBusiness.businessName + " — " + selectedBossBusiness.managerName);
+        listenBossTaskList(selectedBossBusiness);
+
+        mainScroll.smoothScrollTo(0, 0);
+    }
+
+    private void showBossAttendanceScreen() {
+        detachAllListeners();
+
+        loginSection.setVisibility(View.GONE);
+        bossHomeSection.setVisibility(View.GONE);
+        bossTaskListSection.setVisibility(View.GONE);
+        bossAttendanceSection.setVisibility(View.VISIBLE);
+        managerSection.setVisibility(View.GONE);
+
+        if (selectedBossBusiness == null) {
+            selectedBossBusiness = businesses[0];
+        }
+
+        int index = findBusinessIndexById(selectedBossBusiness.businessId);
+        selectedBossAttendanceBusiness = businesses[index];
+        bossAttendanceManagerSpinner.setSelection(index);
+
+        startBossAttendanceScreenListeners();
 
         mainScroll.smoothScrollTo(0, 0);
     }
 
     private void showManagerDashboard(BusinessInfo business) {
-        detachBusinessListeners();
+        detachAllListeners();
 
         loggedManagerBusiness = business;
+        managerAttendanceMonth = firstDayOfCurrentMonth();
+        selectedManagerLeaveDate = null;
+        managerLeaveDateButton.setText("Select Leave Date");
 
         loginSection.setVisibility(View.GONE);
-        bossSection.setVisibility(View.GONE);
+        bossHomeSection.setVisibility(View.GONE);
+        bossTaskListSection.setVisibility(View.GONE);
+        bossAttendanceSection.setVisibility(View.GONE);
         managerSection.setVisibility(View.VISIBLE);
 
         managerBusinessText.setText(business.businessName);
         managerDateText.setText(readableDate());
         managerNameText.setText("Manager: " + business.managerName);
 
-        managerStatusFilterSpinner.setSelection(0);
-
-        listenManagerAttendance(business);
+        listenManagerAttendanceStatus(business);
+        listenManagerAttendanceMonth(business);
+        listenManagerLeaveRequests(business);
         listenManagerTasks(business);
 
         mainScroll.smoothScrollTo(0, 0);
     }
 
-    private void applyBossBusiness(BusinessInfo business) {
-        detachBusinessListeners();
+    private void applyBossHomeBusiness() {
+        if (selectedBossBusiness == null) {
+            selectedBossBusiness = businesses[0];
+        }
 
-        selectedBossBusiness = business;
+        detachHomeListeners();
 
-        bossSubtitleText.setText(business.businessName + " Control Panel");
-        bossSelectedManagerText.setText("Manager: " + business.managerName + "  •  Manager PIN: " + business.managerPin);
+        bossSubtitleText.setText(selectedBossBusiness.businessName + " Control Panel");
+        bossSelectedManagerText.setText("Manager: " + selectedBossBusiness.managerName + " • PIN: " + selectedBossBusiness.managerPin);
 
         bossCheckedInCount.setText("0");
         bossPendingCount.setText("0");
         bossCompletedCount.setText("0");
         bossHighCount.setText("0");
-
-        bossTaskList.removeAllViews();
         bossActivityList.removeAllViews();
 
-        startBossStats(business);
-        listenBossTasks(business);
-        listenActivityLogs(business);
+        listenBossHomeStats(selectedBossBusiness);
+        listenBossHomeActivity(selectedBossBusiness);
     }
 
     private void assignTask(BusinessInfo business, String title, String details, String priority) {
@@ -447,7 +632,6 @@ public class MainActivity extends Activity {
                 .add(data)
                 .addOnSuccessListener(documentReference -> {
                     toast("Task assigned to " + business.managerName);
-
                     addActivityLog(business, "Boss assigned task to " + business.managerName + ": " + title);
 
                     bossTaskTitleInput.setText("");
@@ -466,56 +650,204 @@ public class MainActivity extends Activity {
         String docId = business.managerId + "_" + today;
         long now = System.currentTimeMillis();
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("businessId", business.businessId);
-        data.put("businessName", business.businessName);
-        data.put("managerId", business.managerId);
-        data.put("managerName", business.managerName);
-        data.put("date", today);
-        data.put("updatedAt", FieldValue.serverTimestamp());
-        data.put("updatedAtMillis", now);
-
         if (checkIn) {
+            Map<String, Object> data = new HashMap<>();
+            data.put("businessId", business.businessId);
+            data.put("businessName", business.businessName);
+            data.put("managerId", business.managerId);
+            data.put("managerName", business.managerName);
+            data.put("date", today);
             data.put("status", "Checked In");
             data.put("checkedIn", true);
             data.put("checkedOut", false);
             data.put("checkInTime", readableTime());
             data.put("checkInMillis", now);
+            data.put("updatedAt", FieldValue.serverTimestamp());
+            data.put("updatedAtMillis", now);
+
+            db.collection("companies")
+                    .document(business.businessId)
+                    .collection("attendance")
+                    .document(docId)
+                    .set(data, SetOptions.merge())
+                    .addOnSuccessListener(unused -> {
+                        toast("Checked in");
+                        addActivityLog(business, business.managerName + " checked in");
+                    })
+                    .addOnFailureListener(e -> toast("Check-in failed: " + e.getMessage()));
         } else {
-            data.put("status", "Checked Out");
-            data.put("checkedIn", false);
-            data.put("checkedOut", true);
-            data.put("checkOutTime", readableTime());
-            data.put("checkOutMillis", now);
+            db.collection("companies")
+                    .document(business.businessId)
+                    .collection("attendance")
+                    .document(docId)
+                    .get()
+                    .addOnSuccessListener(snapshot -> {
+                        long checkInMillis = safeLong(snapshot, "checkInMillis", 0);
+
+                        if (checkInMillis <= 0) {
+                            toast("Please check in first");
+                            return;
+                        }
+
+                        AttendanceDecision decision = decideAttendance(today, checkInMillis, now);
+
+                        Map<String, Object> data = new HashMap<>();
+                        data.put("status", "Checked Out");
+                        data.put("checkedIn", false);
+                        data.put("checkedOut", true);
+                        data.put("checkOutTime", readableTime());
+                        data.put("checkOutMillis", now);
+                        data.put("dayType", decision.label);
+                        data.put("workValue", decision.value);
+                        data.put("updatedAt", FieldValue.serverTimestamp());
+                        data.put("updatedAtMillis", now);
+
+                        db.collection("companies")
+                                .document(business.businessId)
+                                .collection("attendance")
+                                .document(docId)
+                                .set(data, SetOptions.merge())
+                                .addOnSuccessListener(unused -> {
+                                    toast("Checked out: " + decision.label);
+                                    addActivityLog(business, business.managerName + " checked out - " + decision.label);
+                                })
+                                .addOnFailureListener(e -> toast("Check-out failed: " + e.getMessage()));
+                    })
+                    .addOnFailureListener(e -> toast("Check-out failed: " + e.getMessage()));
         }
+    }
+
+    private void submitLeaveRequest(BusinessInfo business) {
+        if (selectedManagerLeaveDate == null) {
+            toast("Select leave date");
+            return;
+        }
+
+        Calendar leaveCal = Calendar.getInstance();
+        leaveCal.setTime(selectedManagerLeaveDate.getTime());
+        zeroTime(leaveCal);
+
+        if (leaveCal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
+            toast("Sunday is ignored. Choose a working day.");
+            return;
+        }
+
+        String leaveDate = dateKey(leaveCal.getTime());
+        String monthKey = monthKey(leaveCal);
+
+        for (LeaveRequest request : managerLeaveRequests) {
+            if (leaveDate.equals(request.leaveDate)
+                    && ("Pending".equalsIgnoreCase(request.status) || "Approved".equalsIgnoreCase(request.status))) {
+                toast("Leave already requested for this date");
+                return;
+            }
+        }
+
+        String reason = managerLeaveReasonInput.getText().toString().trim();
+        if (reason.isEmpty()) {
+            reason = "Leave requested";
+        }
+
+        long now = System.currentTimeMillis();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("businessId", business.businessId);
+        data.put("businessName", business.businessName);
+        data.put("managerId", business.managerId);
+        data.put("managerName", business.managerName);
+        data.put("leaveDate", leaveDate);
+        data.put("leaveDateText", formatDate(leaveCal.getTime()));
+        data.put("leaveDateMillis", leaveCal.getTimeInMillis());
+        data.put("monthKey", monthKey);
+        data.put("reason", reason);
+        data.put("status", "Pending");
+        data.put("bossNote", "");
+        data.put("createdAt", FieldValue.serverTimestamp());
+        data.put("createdAtMillis", now);
+        data.put("updatedAt", FieldValue.serverTimestamp());
+        data.put("updatedAtMillis", now);
 
         db.collection("companies")
                 .document(business.businessId)
-                .collection("attendance")
-                .document(docId)
-                .set(data, SetOptions.merge())
-                .addOnSuccessListener(unused -> {
-                    if (checkIn) {
-                        toast("Checked in");
-                        addActivityLog(business, business.managerName + " checked in");
-                    } else {
-                        toast("Checked out");
-                        addActivityLog(business, business.managerName + " checked out");
-                    }
+                .collection("leave_requests")
+                .add(data)
+                .addOnSuccessListener(documentReference -> {
+                    toast("Leave request sent to Boss");
+                    addActivityLog(business, business.managerName + " applied for leave on " + formatDate(leaveCal.getTime()));
+
+                    selectedManagerLeaveDate = null;
+                    managerLeaveDateButton.setText("Select Leave Date");
+                    managerLeaveReasonInput.setText("");
                 })
-                .addOnFailureListener(e -> toast("Attendance failed: " + e.getMessage()));
+                .addOnFailureListener(e -> toast("Leave request failed: " + e.getMessage()));
+    }
+
+    private void approveLeave(BusinessInfo business, LeaveRequest request) {
+        int approvedCount = 0;
+
+        for (LeaveRequest item : bossLeaveRequests) {
+            if (item.managerId.equals(request.managerId)
+                    && item.monthKey.equals(request.monthKey)
+                    && "Approved".equalsIgnoreCase(item.status)
+                    && !item.id.equals(request.id)) {
+                approvedCount++;
+            }
+        }
+
+        if (approvedCount >= 2) {
+            toast("Only 2 paid leaves allowed in this month");
+            return;
+        }
+
+        showBossNoteDialog("Approve Leave", request, note -> {
+            Map<String, Object> data = new HashMap<>();
+            data.put("status", "Approved");
+            data.put("bossNote", note);
+            data.put("updatedAt", FieldValue.serverTimestamp());
+            data.put("updatedAtMillis", System.currentTimeMillis());
+
+            db.collection("companies")
+                    .document(business.businessId)
+                    .collection("leave_requests")
+                    .document(request.id)
+                    .set(data, SetOptions.merge())
+                    .addOnSuccessListener(unused -> {
+                        toast("Leave approved");
+                        addActivityLog(business, "Boss approved leave for " + request.managerName + " on " + request.leaveDateText);
+                    })
+                    .addOnFailureListener(e -> toast("Approval failed: " + e.getMessage()));
+        });
+    }
+
+    private void declineLeave(BusinessInfo business, LeaveRequest request) {
+        showBossNoteDialog("Decline Leave", request, note -> {
+            Map<String, Object> data = new HashMap<>();
+            data.put("status", "Declined");
+            data.put("bossNote", note);
+            data.put("updatedAt", FieldValue.serverTimestamp());
+            data.put("updatedAtMillis", System.currentTimeMillis());
+
+            db.collection("companies")
+                    .document(business.businessId)
+                    .collection("leave_requests")
+                    .document(request.id)
+                    .set(data, SetOptions.merge())
+                    .addOnSuccessListener(unused -> {
+                        toast("Leave declined");
+                        addActivityLog(business, "Boss declined leave for " + request.managerName + " on " + request.leaveDateText);
+                    })
+                    .addOnFailureListener(e -> toast("Decline failed: " + e.getMessage()));
+        });
     }
 
     private void completeTask(BusinessInfo business, WorkTask task, String note) {
-        long now = System.currentTimeMillis();
-
         Map<String, Object> data = new HashMap<>();
         data.put("status", "Completed");
         data.put("completionNote", note);
         data.put("completedAt", FieldValue.serverTimestamp());
-        data.put("completedAtMillis", now);
+        data.put("completedAtMillis", System.currentTimeMillis());
         data.put("updatedAt", FieldValue.serverTimestamp());
-        data.put("updatedAtMillis", now);
+        data.put("updatedAtMillis", System.currentTimeMillis());
 
         db.collection("companies")
                 .document(business.businessId)
@@ -530,12 +862,10 @@ public class MainActivity extends Activity {
     }
 
     private void reopenTask(BusinessInfo business, WorkTask task) {
-        long now = System.currentTimeMillis();
-
         Map<String, Object> data = new HashMap<>();
         data.put("status", "Pending");
         data.put("updatedAt", FieldValue.serverTimestamp());
-        data.put("updatedAtMillis", now);
+        data.put("updatedAtMillis", System.currentTimeMillis());
 
         db.collection("companies")
                 .document(business.businessId)
@@ -549,8 +879,8 @@ public class MainActivity extends Activity {
                 .addOnFailureListener(e -> toast("Reopen failed: " + e.getMessage()));
     }
 
-    private void startBossStats(BusinessInfo business) {
-        bossStatsTaskListener = db.collection("companies")
+    private void listenBossHomeStats(BusinessInfo business) {
+        homeTaskStatsListener = db.collection("companies")
                 .document(business.businessId)
                 .collection("tasks")
                 .addSnapshotListener((snapshots, error) -> {
@@ -581,7 +911,7 @@ public class MainActivity extends Activity {
                     bossHighCount.setText(String.valueOf(high));
                 });
 
-        bossStatsAttendanceListener = db.collection("companies")
+        homeAttendanceStatsListener = db.collection("companies")
                 .document(business.businessId)
                 .collection("attendance")
                 .addSnapshotListener((snapshots, error) -> {
@@ -594,9 +924,9 @@ public class MainActivity extends Activity {
 
                     for (DocumentSnapshot doc : snapshots.getDocuments()) {
                         String date = safeString(doc, "date", "");
-                        Boolean status = doc.getBoolean("checkedIn");
+                        long checkInMillis = safeLong(doc, "checkInMillis", 0);
 
-                        if (today.equals(date) && status != null && status) {
+                        if (today.equals(date) && checkInMillis > 0) {
                             checkedIn++;
                         }
                     }
@@ -605,10 +935,48 @@ public class MainActivity extends Activity {
                 });
     }
 
-    private void listenBossTasks(BusinessInfo business) {
-        if (taskListener != null) {
-            taskListener.remove();
-            taskListener = null;
+    private void listenBossHomeActivity(BusinessInfo business) {
+        homeActivityListener = db.collection("companies")
+                .document(business.businessId)
+                .collection("activity_logs")
+                .addSnapshotListener((snapshots, error) -> {
+                    bossActivityList.removeAllViews();
+
+                    if (error != null) {
+                        bossActivityList.addView(errorText("Activity error: " + error.getMessage()));
+                        return;
+                    }
+
+                    if (snapshots == null || snapshots.isEmpty()) {
+                        bossActivityList.addView(infoText("No activity yet."));
+                        return;
+                    }
+
+                    ArrayList<DocumentSnapshot> docs = new ArrayList<>(snapshots.getDocuments());
+
+                    Collections.sort(docs, (a, b) -> {
+                        long am = safeLong(a, "eventAtMillis", 0);
+                        long bm = safeLong(b, "eventAtMillis", 0);
+                        return Long.compare(bm, am);
+                    });
+
+                    int count = Math.min(8, docs.size());
+
+                    for (int i = 0; i < count; i++) {
+                        String message = safeString(docs.get(i), "message", "Activity");
+                        String time = safeString(docs.get(i), "time", "");
+
+                        TextView row = text("• " + message + "\n  " + time, 13, TEXT_LIGHT, Typeface.NORMAL);
+                        row.setPadding(0, dp(7), 0, dp(7));
+                        bossActivityList.addView(row);
+                    }
+                });
+    }
+
+    private void listenBossTaskList(BusinessInfo business) {
+        if (bossTaskListListener != null) {
+            bossTaskListListener.remove();
+            bossTaskListListener = null;
         }
 
         bossTaskList.removeAllViews();
@@ -617,7 +985,7 @@ public class MainActivity extends Activity {
         String statusFilter = bossStatusFilterSpinner.getSelectedItem().toString();
         String priorityFilter = bossPriorityFilterSpinner.getSelectedItem().toString();
 
-        taskListener = db.collection("companies")
+        bossTaskListListener = db.collection("companies")
                 .document(business.businessId)
                 .collection("tasks")
                 .addSnapshotListener((snapshots, error) -> {
@@ -659,10 +1027,151 @@ public class MainActivity extends Activity {
                 });
     }
 
+    private void startBossAttendanceScreenListeners() {
+        detachBossAttendanceListeners();
+
+        if (selectedBossAttendanceBusiness == null) {
+            selectedBossAttendanceBusiness = businesses[0];
+        }
+
+        bossAttendanceMonthText.setText(monthTitle(bossAttendanceMonth));
+        bossAttendanceMap.clear();
+        bossLeaveRequests.clear();
+
+        bossAttendanceListener = db.collection("companies")
+                .document(selectedBossAttendanceBusiness.businessId)
+                .collection("attendance")
+                .addSnapshotListener((snapshots, error) -> {
+                    bossAttendanceMap.clear();
+
+                    if (snapshots != null) {
+                        for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                            AttendanceRecord record = AttendanceRecord.from(doc);
+                            if (!record.date.isEmpty()) {
+                                bossAttendanceMap.put(record.date, record);
+                            }
+                        }
+                    }
+
+                    renderBossAttendanceCalendar();
+                });
+
+        bossLeaveListener = db.collection("companies")
+                .document(selectedBossAttendanceBusiness.businessId)
+                .collection("leave_requests")
+                .addSnapshotListener((snapshots, error) -> {
+                    bossLeaveRequests.clear();
+
+                    if (snapshots != null) {
+                        for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                            LeaveRequest request = LeaveRequest.from(doc);
+                            if (selectedBossAttendanceBusiness.managerId.equals(request.managerId)) {
+                                bossLeaveRequests.add(request);
+                            }
+                        }
+                    }
+
+                    Collections.sort(bossLeaveRequests, (a, b) -> Long.compare(b.createdAtMillis, a.createdAtMillis));
+
+                    renderBossAttendanceCalendar();
+                    renderBossLeaveRequests();
+                });
+    }
+
+    private void listenManagerAttendanceStatus(BusinessInfo business) {
+        String docId = business.managerId + "_" + todayKey();
+
+        managerAttendanceStatusListener = db.collection("companies")
+                .document(business.businessId)
+                .collection("attendance")
+                .document(docId)
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null) {
+                        managerAttendanceStatus.setText("Attendance error: " + error.getMessage());
+                        managerAttendanceStatus.setTextColor(Color.parseColor("#FCA5A5"));
+                        return;
+                    }
+
+                    if (snapshot == null || !snapshot.exists()) {
+                        managerAttendanceStatus.setText("Today: Not checked in yet");
+                        managerAttendanceStatus.setTextColor(Color.parseColor("#FDBA74"));
+                        return;
+                    }
+
+                    String status = safeString(snapshot, "status", "Not updated");
+                    String checkIn = safeString(snapshot, "checkInTime", "-");
+                    String checkOut = safeString(snapshot, "checkOutTime", "-");
+                    long checkInMillis = safeLong(snapshot, "checkInMillis", 0);
+                    long checkOutMillis = safeLong(snapshot, "checkOutMillis", 0);
+
+                    AttendanceDecision decision = null;
+                    if (checkInMillis > 0) {
+                        decision = decideAttendance(todayKey(), checkInMillis, checkOutMillis);
+                    }
+
+                    String type = decision == null ? "" : "\nCurrent Type: " + decision.label;
+
+                    managerAttendanceStatus.setText("Today: " + status + "\nCheck In: " + checkIn + "\nCheck Out: " + checkOut + type);
+
+                    if (decision != null && "Full Day".equals(decision.label)) {
+                        managerAttendanceStatus.setTextColor(Color.parseColor("#86EFAC"));
+                    } else if (decision != null && "Half Day".equals(decision.label)) {
+                        managerAttendanceStatus.setTextColor(Color.parseColor("#FDE047"));
+                    } else {
+                        managerAttendanceStatus.setTextColor(MUTED_LIGHT);
+                    }
+                });
+    }
+
+    private void listenManagerAttendanceMonth(BusinessInfo business) {
+        managerAttendanceMap.clear();
+
+        managerAttendanceMonthListener = db.collection("companies")
+                .document(business.businessId)
+                .collection("attendance")
+                .addSnapshotListener((snapshots, error) -> {
+                    managerAttendanceMap.clear();
+
+                    if (snapshots != null) {
+                        for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                            AttendanceRecord record = AttendanceRecord.from(doc);
+                            if (!record.date.isEmpty()) {
+                                managerAttendanceMap.put(record.date, record);
+                            }
+                        }
+                    }
+
+                    renderManagerAttendanceCalendar();
+                });
+    }
+
+    private void listenManagerLeaveRequests(BusinessInfo business) {
+        managerLeaveRequests.clear();
+
+        managerLeaveListener = db.collection("companies")
+                .document(business.businessId)
+                .collection("leave_requests")
+                .whereEqualTo("managerId", business.managerId)
+                .addSnapshotListener((snapshots, error) -> {
+                    managerLeaveRequests.clear();
+
+                    if (snapshots != null) {
+                        for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                            managerLeaveRequests.add(LeaveRequest.from(doc));
+                        }
+                    }
+
+                    Collections.sort(managerLeaveRequests, (a, b) -> Long.compare(b.createdAtMillis, a.createdAtMillis));
+
+                    renderManagerLeaveRequests();
+                    renderManagerAttendanceCalendar();
+                });
+    }
+
     private void listenManagerTasks(BusinessInfo business) {
-        if (taskListener != null) {
-            taskListener.remove();
-            taskListener = null;
+        if (managerTaskListener != null) {
+            managerTaskListener.remove();
+            managerTaskListener = null;
         }
 
         managerTaskList.removeAllViews();
@@ -670,7 +1179,7 @@ public class MainActivity extends Activity {
 
         String statusFilter = managerStatusFilterSpinner.getSelectedItem().toString();
 
-        taskListener = db.collection("companies")
+        managerTaskListener = db.collection("companies")
                 .document(business.businessId)
                 .collection("tasks")
                 .whereEqualTo("assignedTo", business.managerId)
@@ -703,7 +1212,6 @@ public class MainActivity extends Activity {
                         }
 
                         boolean statusOk = "All".equals(statusFilter) || statusFilter.equalsIgnoreCase(task.status);
-
                         if (statusOk) {
                             tasks.add(task);
                         }
@@ -725,106 +1233,306 @@ public class MainActivity extends Activity {
                 });
     }
 
-    private void listenManagerAttendance(BusinessInfo business) {
-        if (attendanceListener != null) {
-            attendanceListener.remove();
-            attendanceListener = null;
+    private void renderBossAttendanceCalendar() {
+        if (selectedBossAttendanceBusiness == null) {
+            return;
         }
 
-        String docId = business.managerId + "_" + todayKey();
+        bossAttendanceMonthText.setText(monthTitle(bossAttendanceMonth));
 
-        attendanceListener = db.collection("companies")
-                .document(business.businessId)
-                .collection("attendance")
-                .document(docId)
-                .addSnapshotListener((snapshot, error) -> {
-                    if (error != null) {
-                        managerAttendanceStatus.setText("Attendance error: " + error.getMessage());
-                        managerAttendanceStatus.setTextColor(Color.parseColor("#FCA5A5"));
-                        return;
-                    }
+        Map<String, LeaveRequest> approvedLeaves = getApprovedLeaveMap(bossLeaveRequests);
+        CalendarSummary summary = renderCalendar(
+                bossAttendanceCalendarGrid,
+                bossAttendanceMonth,
+                bossAttendanceMap,
+                approvedLeaves
+        );
 
-                    if (snapshot == null || !snapshot.exists()) {
-                        managerAttendanceStatus.setText("Today: Not checked in yet");
-                        managerAttendanceStatus.setTextColor(Color.parseColor("#FDBA74"));
-                        return;
-                    }
-
-                    String status = safeString(snapshot, "status", "Not updated");
-                    String checkIn = safeString(snapshot, "checkInTime", "-");
-                    String checkOut = safeString(snapshot, "checkOutTime", "-");
-
-                    managerAttendanceStatus.setText("Today: " + status + "\nCheck In: " + checkIn + "\nCheck Out: " + checkOut);
-
-                    if ("Checked In".equalsIgnoreCase(status)) {
-                        managerAttendanceStatus.setTextColor(Color.parseColor("#86EFAC"));
-                    } else {
-                        managerAttendanceStatus.setTextColor(MUTED_LIGHT);
-                    }
-                });
+        bossAttendanceSummaryText.setText(
+                "Manager: " + selectedBossAttendanceBusiness.managerName +
+                        "\nBusiness: " + selectedBossAttendanceBusiness.businessName +
+                        "\nWorked Days: " + formatWorkDays(summary.totalWorked) +
+                        "\nFull Days: " + summary.fullDays +
+                        "   Half Days: " + summary.halfDays +
+                        "\nPaid Leaves: " + summary.paidLeaves + " / 2" +
+                        "\nAbsents: " + summary.absentDays +
+                        "\nSundays ignored: " + summary.sundays
+        );
     }
 
-    private void listenActivityLogs(BusinessInfo business) {
-        if (activityListener != null) {
-            activityListener.remove();
-            activityListener = null;
+    private void renderManagerAttendanceCalendar() {
+        if (loggedManagerBusiness == null) {
+            return;
         }
 
-        bossActivityList.removeAllViews();
-        bossActivityList.addView(infoText("Loading activity..."));
+        managerMonthText.setText(monthTitle(managerAttendanceMonth));
 
-        activityListener = db.collection("companies")
-                .document(business.businessId)
-                .collection("activity_logs")
-                .addSnapshotListener((snapshots, error) -> {
-                    bossActivityList.removeAllViews();
+        Map<String, LeaveRequest> approvedLeaves = getApprovedLeaveMap(managerLeaveRequests);
+        CalendarSummary summary = renderCalendar(
+                managerAttendanceCalendarGrid,
+                managerAttendanceMonth,
+                managerAttendanceMap,
+                approvedLeaves
+        );
 
-                    if (error != null) {
-                        bossActivityList.addView(errorText("Activity error: " + error.getMessage()));
-                        return;
-                    }
-
-                    if (snapshots == null || snapshots.isEmpty()) {
-                        bossActivityList.addView(infoText("No activity yet."));
-                        return;
-                    }
-
-                    ArrayList<DocumentSnapshot> docs = new ArrayList<>(snapshots.getDocuments());
-
-                    Collections.sort(docs, (a, b) -> {
-                        long am = safeLong(a, "eventAtMillis", 0);
-                        long bm = safeLong(b, "eventAtMillis", 0);
-                        return Long.compare(bm, am);
-                    });
-
-                    int count = Math.min(8, docs.size());
-
-                    for (int i = 0; i < count; i++) {
-                        String message = safeString(docs.get(i), "message", "Activity");
-                        String time = safeString(docs.get(i), "time", "");
-
-                        TextView row = text("• " + message + "\n  " + time, 13, TEXT_LIGHT, Typeface.NORMAL);
-                        row.setPadding(0, dp(7), 0, dp(7));
-                        bossActivityList.addView(row);
-                    }
-                });
+        managerAttendanceSummaryText.setText(
+                "Worked Days: " + formatWorkDays(summary.totalWorked) +
+                        "\nFull Days: " + summary.fullDays +
+                        "   Half Days: " + summary.halfDays +
+                        "\nPaid Leaves: " + summary.paidLeaves + " / 2" +
+                        "\nAbsents: " + summary.absentDays +
+                        "\nSundays ignored: " + summary.sundays
+        );
     }
 
-    private void addActivityLog(BusinessInfo business, String message) {
-        long now = System.currentTimeMillis();
+    private CalendarSummary renderCalendar(LinearLayout grid, Calendar month, Map<String, AttendanceRecord> attendanceMap, Map<String, LeaveRequest> approvedLeaves) {
+        grid.removeAllViews();
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("businessId", business.businessId);
-        data.put("businessName", business.businessName);
-        data.put("message", message);
-        data.put("time", readableDateTime());
-        data.put("eventAt", FieldValue.serverTimestamp());
-        data.put("eventAtMillis", now);
+        CalendarSummary summary = new CalendarSummary();
 
-        db.collection("companies")
-                .document(business.businessId)
-                .collection("activity_logs")
-                .add(data);
+        LinearLayout header = calendarRow();
+        String[] days = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
+        for (String d : days) {
+            TextView tv = calendarHeaderCell(d);
+            header.addView(tv);
+        }
+        grid.addView(header);
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(month.getTime());
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        zeroTime(cal);
+
+        int maxDay = cal.getActualMaximum(Calendar.DAY_OF_MONTH);
+        int offset = (cal.get(Calendar.DAY_OF_WEEK) + 5) % 7;
+
+        int cellCount = 0;
+        LinearLayout row = calendarRow();
+
+        for (int i = 0; i < offset; i++) {
+            row.addView(emptyCalendarCell());
+            cellCount++;
+        }
+
+        for (int day = 1; day <= maxDay; day++) {
+            Calendar dayCal = Calendar.getInstance();
+            dayCal.setTime(month.getTime());
+            dayCal.set(Calendar.DAY_OF_MONTH, day);
+            zeroTime(dayCal);
+
+            String dateKey = dateKey(dayCal.getTime());
+            boolean isSunday = dayCal.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY;
+            boolean isFuture = dayCal.getTimeInMillis() > startOfTodayMillis();
+
+            AttendanceRecord record = attendanceMap.get(dateKey);
+            LeaveRequest approvedLeave = approvedLeaves.get(dateKey);
+
+            DayDisplay display = decideDayDisplay(dateKey, dayCal, record, approvedLeave, isSunday, isFuture);
+
+            if (isSunday) {
+                summary.sundays++;
+            } else if (!isFuture) {
+                if ("Full Day".equals(display.label)) {
+                    summary.fullDays++;
+                    summary.totalWorked += 1.0;
+                } else if ("Half Day".equals(display.label)) {
+                    summary.halfDays++;
+                    summary.totalWorked += 0.5;
+                } else if ("Paid Leave".equals(display.label)) {
+                    summary.paidLeaves++;
+                    summary.totalWorked += 1.0;
+                } else if ("Absent".equals(display.label)) {
+                    summary.absentDays++;
+                }
+            }
+
+            row.addView(calendarDayCell(String.valueOf(day), display));
+
+            cellCount++;
+            if (cellCount % 7 == 0) {
+                grid.addView(row);
+                row = calendarRow();
+            }
+        }
+
+        if (cellCount % 7 != 0) {
+            while (cellCount % 7 != 0) {
+                row.addView(emptyCalendarCell());
+                cellCount++;
+            }
+            grid.addView(row);
+        }
+
+        return summary;
+    }
+
+    private DayDisplay decideDayDisplay(String dateKey, Calendar dayCal, AttendanceRecord record, LeaveRequest approvedLeave, boolean isSunday, boolean isFuture) {
+        if (isSunday) {
+            return new DayDisplay("Sunday", GREY, "SUN");
+        }
+
+        if (approvedLeave != null) {
+            return new DayDisplay("Paid Leave", BLUE, "●");
+        }
+
+        if (isFuture) {
+            return new DayDisplay("Future", GREY, "");
+        }
+
+        if (record == null || record.checkInMillis <= 0) {
+            return new DayDisplay("Absent", RED, "●");
+        }
+
+        AttendanceDecision decision = decideAttendance(dateKey, record.checkInMillis, record.checkOutMillis);
+
+        if ("Full Day".equals(decision.label)) {
+            return new DayDisplay("Full Day", GREEN, "●");
+        }
+
+        return new DayDisplay("Half Day", ORANGE, "●");
+    }
+
+    private AttendanceDecision decideAttendance(String dateKey, long checkInMillis, long checkOutMillis) {
+        long cutoff = timeForDate(dateKey, CUTOFF_HOUR, CUTOFF_MINUTE);
+        long end = timeForDate(dateKey, END_HOUR, END_MINUTE);
+
+        if (checkInMillis <= 0) {
+            return new AttendanceDecision("Absent", 0.0);
+        }
+
+        if (checkInMillis <= cutoff) {
+            if (checkOutMillis <= 0 || checkOutMillis >= end) {
+                return new AttendanceDecision("Full Day", 1.0);
+            }
+
+            long duration = checkOutMillis - checkInMillis;
+            if (duration > SEVEN_HOURS_MILLIS) {
+                return new AttendanceDecision("Full Day", 1.0);
+            }
+
+            return new AttendanceDecision("Half Day", 0.5);
+        }
+
+        if (checkOutMillis > 0) {
+            long duration = checkOutMillis - checkInMillis;
+            if (duration > SEVEN_HOURS_MILLIS) {
+                return new AttendanceDecision("Full Day", 1.0);
+            }
+        }
+
+        return new AttendanceDecision("Half Day", 0.5);
+    }
+
+    private void renderBossLeaveRequests() {
+        bossPendingLeaveList.removeAllViews();
+
+        if (selectedBossAttendanceBusiness == null) {
+            bossPendingLeaveList.addView(infoText("No manager selected."));
+            return;
+        }
+
+        if (bossLeaveRequests.isEmpty()) {
+            bossPendingLeaveList.addView(infoText("No leave requests yet."));
+            return;
+        }
+
+        boolean hasAny = false;
+
+        for (LeaveRequest request : bossLeaveRequests) {
+            if (!selectedBossAttendanceBusiness.managerId.equals(request.managerId)) {
+                continue;
+            }
+
+            hasAny = true;
+            bossPendingLeaveList.addView(bossLeaveRequestView(selectedBossAttendanceBusiness, request));
+        }
+
+        if (!hasAny) {
+            bossPendingLeaveList.addView(infoText("No leave requests for this manager."));
+        }
+    }
+
+    private void renderManagerLeaveRequests() {
+        managerLeaveList.removeAllViews();
+
+        if (managerLeaveRequests.isEmpty()) {
+            managerLeaveList.addView(infoText("No leave requests yet."));
+            return;
+        }
+
+        int count = Math.min(10, managerLeaveRequests.size());
+
+        for (int i = 0; i < count; i++) {
+            managerLeaveList.addView(managerLeaveRequestView(managerLeaveRequests.get(i)));
+        }
+    }
+
+    private View bossLeaveRequestView(BusinessInfo business, LeaveRequest request) {
+        LinearLayout card = innerGlassCard();
+
+        TextView title = text(request.leaveDateText + " • " + request.status, 16, WHITE, Typeface.BOLD);
+        card.addView(title);
+
+        TextView details = text(
+                "Manager: " + request.managerName +
+                        "\nReason: " + request.reason +
+                        "\nBoss Note: " + emptyFallback(request.bossNote),
+                13,
+                TEXT_LIGHT,
+                Typeface.NORMAL
+        );
+        details.setPadding(0, dp(8), 0, 0);
+        card.addView(details);
+
+        if ("Pending".equalsIgnoreCase(request.status)) {
+            LinearLayout row = horizontalRow();
+            row.setPadding(0, dp(12), 0, 0);
+
+            Button approve = compactButton("Approve", GREEN);
+            Button decline = compactButton("Decline", RED);
+
+            row.addView(approve);
+            row.addView(decline);
+
+            card.addView(row);
+
+            approve.setOnClickListener(v -> approveLeave(business, request));
+            decline.setOnClickListener(v -> declineLeave(business, request));
+        }
+
+        return card;
+    }
+
+    private View managerLeaveRequestView(LeaveRequest request) {
+        LinearLayout card = innerGlassCard();
+
+        int color = ORANGE;
+        if ("Approved".equalsIgnoreCase(request.status)) {
+            color = GREEN;
+        } else if ("Declined".equalsIgnoreCase(request.status)) {
+            color = RED;
+        }
+
+        LinearLayout top = horizontalRow();
+
+        TextView title = text(request.leaveDateText, 16, WHITE, Typeface.BOLD);
+        title.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        top.addView(title);
+        top.addView(chip(request.status, color));
+
+        card.addView(top);
+
+        TextView detail = text(
+                "Reason: " + request.reason +
+                        "\nBoss Note: " + emptyFallback(request.bossNote),
+                13,
+                TEXT_LIGHT,
+                Typeface.NORMAL
+        );
+        detail.setPadding(0, dp(8), 0, 0);
+        card.addView(detail);
+
+        return card;
     }
 
     private View bossTaskView(BusinessInfo business, WorkTask task) {
@@ -870,12 +1578,6 @@ public class MainActivity extends Activity {
             note.setPadding(dp(12), dp(9), dp(12), dp(9));
             note.setBackground(glassStroke(Color.argb(35, 22, 163, 74), dp(14), Color.argb(95, 134, 239, 172)));
             card.addView(note);
-
-            if (!task.completedAtText.isEmpty()) {
-                TextView completed = text("Completed: " + task.completedAtText, 12, MUTED_LIGHT, Typeface.NORMAL);
-                completed.setPadding(0, dp(7), 0, 0);
-                card.addView(completed);
-            }
 
             Button reopen = compactFullButton("Reopen Task", ORANGE);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
@@ -928,12 +1630,6 @@ public class MainActivity extends Activity {
             note.setPadding(dp(12), dp(9), dp(12), dp(9));
             note.setBackground(glassStroke(Color.argb(35, 22, 163, 74), dp(14), Color.argb(95, 134, 239, 172)));
             card.addView(note);
-
-            if (!task.completedAtText.isEmpty()) {
-                TextView completed = text("Completed: " + task.completedAtText, 12, MUTED_LIGHT, Typeface.NORMAL);
-                completed.setPadding(0, dp(7), 0, 0);
-                card.addView(completed);
-            }
         } else {
             Button complete = compactFullButton("Complete Task", GREEN);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
@@ -961,18 +1657,39 @@ public class MainActivity extends Activity {
                 .setView(noteInput)
                 .setPositiveButton("Submit", (dialog, which) -> {
                     String note = noteInput.getText().toString().trim();
-
                     if (note.isEmpty()) {
                         note = "Completed";
                     }
-
                     completeTask(business, task, note);
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
-    private void openDueDatePicker() {
+    private void showBossNoteDialog(String title, LeaveRequest request, BossNoteCallback callback) {
+        EditText noteInput = new EditText(this);
+        noteInput.setHint("Boss note");
+        noteInput.setMinLines(2);
+        noteInput.setGravity(Gravity.TOP);
+        noteInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        noteInput.setPadding(dp(12), dp(10), dp(12), dp(10));
+
+        new AlertDialog.Builder(this)
+                .setTitle(title)
+                .setMessage(request.managerName + " • " + request.leaveDateText)
+                .setView(noteInput)
+                .setPositiveButton("Submit", (dialog, which) -> {
+                    String note = noteInput.getText().toString().trim();
+                    if (note.isEmpty()) {
+                        note = title;
+                    }
+                    callback.onNote(note);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void openTaskDueDatePicker() {
         Calendar cal = selectedDueDate == null ? Calendar.getInstance() : selectedDueDate;
 
         DatePickerDialog dialog = new DatePickerDialog(
@@ -982,11 +1699,7 @@ public class MainActivity extends Activity {
                     selectedDueDate.set(Calendar.YEAR, year);
                     selectedDueDate.set(Calendar.MONTH, month);
                     selectedDueDate.set(Calendar.DAY_OF_MONTH, dayOfMonth);
-                    selectedDueDate.set(Calendar.HOUR_OF_DAY, 0);
-                    selectedDueDate.set(Calendar.MINUTE, 0);
-                    selectedDueDate.set(Calendar.SECOND, 0);
-                    selectedDueDate.set(Calendar.MILLISECOND, 0);
-
+                    zeroTime(selectedDueDate);
                     bossDueDateButton.setText("Due: " + formatDate(selectedDueDate.getTime()));
                 },
                 cal.get(Calendar.YEAR),
@@ -995,6 +1708,62 @@ public class MainActivity extends Activity {
         );
 
         dialog.show();
+    }
+
+    private void openManagerLeaveDatePicker() {
+        Calendar cal = selectedManagerLeaveDate == null ? Calendar.getInstance() : selectedManagerLeaveDate;
+
+        DatePickerDialog dialog = new DatePickerDialog(
+                this,
+                (view, year, month, dayOfMonth) -> {
+                    selectedManagerLeaveDate = Calendar.getInstance();
+                    selectedManagerLeaveDate.set(Calendar.YEAR, year);
+                    selectedManagerLeaveDate.set(Calendar.MONTH, month);
+                    selectedManagerLeaveDate.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                    zeroTime(selectedManagerLeaveDate);
+
+                    if (selectedManagerLeaveDate.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
+                        toast("Sunday is ignored. Select a working day.");
+                        return;
+                    }
+
+                    managerLeaveDateButton.setText("Leave Date: " + formatDate(selectedManagerLeaveDate.getTime()));
+                },
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH),
+                cal.get(Calendar.DAY_OF_MONTH)
+        );
+
+        dialog.show();
+    }
+
+    private void addActivityLog(BusinessInfo business, String message) {
+        Map<String, Object> data = new HashMap<>();
+        long now = System.currentTimeMillis();
+
+        data.put("businessId", business.businessId);
+        data.put("businessName", business.businessName);
+        data.put("message", message);
+        data.put("time", readableDateTime());
+        data.put("eventAt", FieldValue.serverTimestamp());
+        data.put("eventAtMillis", now);
+
+        db.collection("companies")
+                .document(business.businessId)
+                .collection("activity_logs")
+                .add(data);
+    }
+
+    private Map<String, LeaveRequest> getApprovedLeaveMap(ArrayList<LeaveRequest> requests) {
+        Map<String, LeaveRequest> map = new HashMap<>();
+
+        for (LeaveRequest request : requests) {
+            if ("Approved".equalsIgnoreCase(request.status)) {
+                map.put(request.leaveDate, request);
+            }
+        }
+
+        return map;
     }
 
     private boolean isOverdue(WorkTask task) {
@@ -1013,7 +1782,6 @@ public class MainActivity extends Activity {
         if ("Completed".equalsIgnoreCase(status)) {
             return GREEN;
         }
-
         return ORANGE;
     }
 
@@ -1021,11 +1789,9 @@ public class MainActivity extends Activity {
         if ("High".equalsIgnoreCase(priority)) {
             return RED;
         }
-
         if ("Medium".equalsIgnoreCase(priority)) {
             return ORANGE;
         }
-
         return BLUE;
     }
 
@@ -1038,36 +1804,68 @@ public class MainActivity extends Activity {
         showLoginScreen();
     }
 
-    private void detachBusinessListeners() {
-        if (taskListener != null) {
-            taskListener.remove();
-            taskListener = null;
+    private void detachHomeListeners() {
+        if (homeTaskStatsListener != null) {
+            homeTaskStatsListener.remove();
+            homeTaskStatsListener = null;
         }
 
-        if (attendanceListener != null) {
-            attendanceListener.remove();
-            attendanceListener = null;
+        if (homeAttendanceStatsListener != null) {
+            homeAttendanceStatsListener.remove();
+            homeAttendanceStatsListener = null;
         }
 
-        if (bossStatsTaskListener != null) {
-            bossStatsTaskListener.remove();
-            bossStatsTaskListener = null;
+        if (homeActivityListener != null) {
+            homeActivityListener.remove();
+            homeActivityListener = null;
+        }
+    }
+
+    private void detachBossAttendanceListeners() {
+        if (bossAttendanceListener != null) {
+            bossAttendanceListener.remove();
+            bossAttendanceListener = null;
         }
 
-        if (bossStatsAttendanceListener != null) {
-            bossStatsAttendanceListener.remove();
-            bossStatsAttendanceListener = null;
+        if (bossLeaveListener != null) {
+            bossLeaveListener.remove();
+            bossLeaveListener = null;
+        }
+    }
+
+    private void detachAllListeners() {
+        detachHomeListeners();
+        detachBossAttendanceListeners();
+
+        if (bossTaskListListener != null) {
+            bossTaskListListener.remove();
+            bossTaskListListener = null;
         }
 
-        if (activityListener != null) {
-            activityListener.remove();
-            activityListener = null;
+        if (managerAttendanceStatusListener != null) {
+            managerAttendanceStatusListener.remove();
+            managerAttendanceStatusListener = null;
+        }
+
+        if (managerAttendanceMonthListener != null) {
+            managerAttendanceMonthListener.remove();
+            managerAttendanceMonthListener = null;
+        }
+
+        if (managerLeaveListener != null) {
+            managerLeaveListener.remove();
+            managerLeaveListener = null;
+        }
+
+        if (managerTaskListener != null) {
+            managerTaskListener.remove();
+            managerTaskListener = null;
         }
     }
 
     @Override
     protected void onDestroy() {
-        detachBusinessListeners();
+        detachAllListeners();
         super.onDestroy();
     }
 
@@ -1077,7 +1875,6 @@ public class MainActivity extends Activity {
                 return business;
             }
         }
-
         return null;
     }
 
@@ -1087,7 +1884,6 @@ public class MainActivity extends Activity {
                 return i;
             }
         }
-
         return 0;
     }
 
@@ -1097,19 +1893,7 @@ public class MainActivity extends Activity {
                 return business;
             }
         }
-
         return null;
-    }
-
-    private void setSpinnerItems(Spinner spinner, String[] items) {
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_item,
-                items
-        );
-
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
     }
 
     private void setupUiStyle() {
@@ -1125,7 +1909,6 @@ public class MainActivity extends Activity {
 
         setGlow(findViewById(R.id.glowTop), BLUE);
         setGlow(findViewById(R.id.glowBottom), CYAN);
-        setGlow(findViewById(R.id.glowMiddle), WHITE);
 
         int[] glassCards = new int[]{
                 R.id.loginCard,
@@ -1134,11 +1917,20 @@ public class MainActivity extends Activity {
                 R.id.bossBusinessCard,
                 R.id.bossStatsCard,
                 R.id.bossAssignCard,
-                R.id.bossFilterCard,
-                R.id.bossTasksCard,
+                R.id.bossNavCard,
                 R.id.bossActivityCard,
+                R.id.taskListHeaderCard,
+                R.id.taskListFilterCard,
+                R.id.bossTasksCard,
+                R.id.attendanceHeaderCard,
+                R.id.attendanceControlCard,
+                R.id.attendanceLegendCard,
+                R.id.attendanceCalendarCard,
+                R.id.bossLeaveRequestsCard,
                 R.id.managerHeaderCard,
                 R.id.managerAttendanceCard,
+                R.id.managerLeaveApplyCard,
+                R.id.managerLeaveStatusCard,
                 R.id.managerStatsCard,
                 R.id.managerFilterCard,
                 R.id.managerTasksCard
@@ -1146,8 +1938,10 @@ public class MainActivity extends Activity {
 
         for (int id : glassCards) {
             View view = findViewById(id);
-            view.setBackground(glassDrawable(dp(22)));
-            view.setElevation(dp(8));
+            if (view != null) {
+                view.setBackground(glassDrawable(dp(22)));
+                view.setElevation(dp(8));
+            }
         }
 
         int[] statCards = new int[]{
@@ -1161,29 +1955,73 @@ public class MainActivity extends Activity {
 
         for (int id : statCards) {
             View view = findViewById(id);
-            view.setBackground(glassStroke(Color.argb(45, 255, 255, 255), dp(18), Color.argb(80, 255, 255, 255)));
-            view.setElevation(dp(5));
+            if (view != null) {
+                view.setBackground(glassStroke(Color.argb(45, 255, 255, 255), dp(18), Color.argb(80, 255, 255, 255)));
+                view.setElevation(dp(5));
+            }
         }
 
         setEditStyle(loginPinInput);
         setEditStyle(bossTaskTitleInput);
         setEditStyle(bossTaskDetailsInput);
+        setEditStyle(managerLeaveReasonInput);
 
-        bossLoginButton.setBackground(rounded(BLUE, dp(14)));
-        managerLoginButton.setBackground(rounded(PURPLE, dp(14)));
-        bossLogoutButton.setBackground(glassStroke(Color.argb(28, 255, 255, 255), dp(20), Color.argb(110, 255, 255, 255)));
-        managerLogoutButton.setBackground(glassStroke(Color.argb(28, 255, 255, 255), dp(20), Color.argb(110, 255, 255, 255)));
+        setButtonStyle(bossLoginButton, BLUE);
+        setButtonStyle(managerLoginButton, PURPLE);
+        setButtonStyle(bossLogoutButton, Color.argb(40, 255, 255, 255));
+        setButtonStyle(managerLogoutButton, Color.argb(40, 255, 255, 255));
+        setButtonStyle(bossDueDateButton, Color.argb(40, 255, 255, 255));
+        setButtonStyle(bossAssignTaskButton, GREEN);
+        setButtonStyle(bossOpenTaskListButton, BLUE);
+        setButtonStyle(bossOpenAttendanceButton, PURPLE);
+        setButtonStyle(taskListBackButton, Color.argb(40, 255, 255, 255));
+        setButtonStyle(attendanceBackButton, Color.argb(40, 255, 255, 255));
+        setButtonStyle(bossAttendancePrevMonthButton, Color.argb(40, 255, 255, 255));
+        setButtonStyle(bossAttendanceNextMonthButton, Color.argb(40, 255, 255, 255));
+        setButtonStyle(managerPrevMonthButton, Color.argb(40, 255, 255, 255));
+        setButtonStyle(managerNextMonthButton, Color.argb(40, 255, 255, 255));
+        setButtonStyle(managerCheckInButton, GREEN);
+        setButtonStyle(managerCheckOutButton, RED);
+        setButtonStyle(managerLeaveDateButton, Color.argb(40, 255, 255, 255));
+        setButtonStyle(managerApplyLeaveButton, BLUE);
+    }
 
-        bossDueDateButton.setBackground(glassStroke(Color.argb(32, 255, 255, 255), dp(14), Color.argb(120, 255, 255, 255)));
-        bossAssignTaskButton.setBackground(rounded(GREEN, dp(14)));
+    private void setSpinnerItems(Spinner spinner, String[] items) {
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>(
+                this,
+                android.R.layout.simple_spinner_item,
+                items
+        ) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+                if (view instanceof TextView) {
+                    TextView tv = (TextView) view;
+                    tv.setTextColor(WHITE);
+                    tv.setTextSize(14);
+                }
+                return view;
+            }
 
-        managerCheckInButton.setBackground(rounded(GREEN, dp(14)));
-        managerCheckOutButton.setBackground(rounded(RED, dp(14)));
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                if (view instanceof TextView) {
+                    TextView tv = (TextView) view;
+                    tv.setTextColor(Color.BLACK);
+                    tv.setTextSize(14);
+                }
+                return view;
+            }
+        };
+
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+        spinner.setBackground(glassStroke(Color.argb(35, 255, 255, 255), dp(14), Color.argb(90, 255, 255, 255)));
     }
 
     private void setGlow(View view, int color) {
         GradientDrawable drawable = new GradientDrawable();
-        drawable.setShape(GradientDrawable.RECTANGLE);
         drawable.setColor(color);
         drawable.setCornerRadius(dp(300));
         view.setBackground(drawable);
@@ -1193,6 +2031,13 @@ public class MainActivity extends Activity {
         editText.setBackground(glassStroke(Color.argb(35, 255, 255, 255), dp(14), Color.argb(90, 255, 255, 255)));
         editText.setTextColor(WHITE);
         editText.setHintTextColor(MUTED_LIGHT);
+    }
+
+    private void setButtonStyle(Button button, int color) {
+        button.setAllCaps(false);
+        button.setTextColor(WHITE);
+        button.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        button.setBackground(rounded(color, dp(14)));
     }
 
     private LinearLayout innerGlassCard() {
@@ -1223,6 +2068,25 @@ public class MainActivity extends Activity {
         return row;
     }
 
+    private Button compactButton(String label, int color) {
+        Button button = new Button(this);
+        button.setText(label);
+        setButtonStyle(button, color);
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(44), 1);
+        lp.setMargins(dp(4), 0, dp(4), 0);
+        button.setLayoutParams(lp);
+
+        return button;
+    }
+
+    private Button compactFullButton(String label, int color) {
+        Button button = new Button(this);
+        button.setText(label);
+        setButtonStyle(button, color);
+        return button;
+    }
+
     private TextView chip(String text, int color) {
         TextView chip = text(text, 12, WHITE, Typeface.BOLD);
         chip.setGravity(Gravity.CENTER);
@@ -1239,15 +2103,49 @@ public class MainActivity extends Activity {
         return chip;
     }
 
-    private Button compactFullButton(String label, int color) {
-        Button button = new Button(this);
-        button.setText(label);
-        button.setAllCaps(false);
-        button.setTextColor(WHITE);
-        button.setTextSize(13);
-        button.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        button.setBackground(rounded(color, dp(14)));
-        return button;
+    private LinearLayout calendarRow() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+        return row;
+    }
+
+    private TextView calendarHeaderCell(String text) {
+        TextView tv = text(text, 11, MUTED_LIGHT, Typeface.BOLD);
+        tv.setGravity(Gravity.CENTER);
+        tv.setLayoutParams(new LinearLayout.LayoutParams(0, dp(32), 1));
+        return tv;
+    }
+
+    private View emptyCalendarCell() {
+        TextView tv = text("", 12, WHITE, Typeface.NORMAL);
+        tv.setLayoutParams(new LinearLayout.LayoutParams(0, dp(58), 1));
+        return tv;
+    }
+
+    private View calendarDayCell(String day, DayDisplay display) {
+        LinearLayout cell = new LinearLayout(this);
+        cell.setOrientation(LinearLayout.VERTICAL);
+        cell.setGravity(Gravity.CENTER);
+        cell.setPadding(dp(2), dp(4), dp(2), dp(4));
+        cell.setBackground(glassStroke(Color.argb(24, 255, 255, 255), dp(12), Color.argb(45, 255, 255, 255)));
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(0, dp(58), 1);
+        lp.setMargins(dp(2), dp(2), dp(2), dp(2));
+        cell.setLayoutParams(lp);
+
+        TextView dayText = text(day, 13, WHITE, Typeface.BOLD);
+        dayText.setGravity(Gravity.CENTER);
+        cell.addView(dayText);
+
+        TextView dot = text(display.dot, 14, display.color, Typeface.BOLD);
+        dot.setGravity(Gravity.CENTER);
+        cell.addView(dot);
+
+        return cell;
     }
 
     private TextView infoText(String message) {
@@ -1311,7 +2209,6 @@ public class MainActivity extends Activity {
     private void hideKeyboard(View view) {
         try {
             InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-
             if (imm != null) {
                 imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
             }
@@ -1323,8 +2220,30 @@ public class MainActivity extends Activity {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
+    private Calendar firstDayOfCurrentMonth() {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+        zeroTime(cal);
+        return cal;
+    }
+
+    private void zeroTime(Calendar cal) {
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+    }
+
     private String todayKey() {
         return new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+    }
+
+    private String dateKey(Date date) {
+        return new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date);
+    }
+
+    private String monthKey(Calendar cal) {
+        return new SimpleDateFormat("yyyy-MM", Locale.getDefault()).format(cal.getTime());
     }
 
     private String readableDate() {
@@ -1343,16 +2262,65 @@ public class MainActivity extends Activity {
         return new SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(date);
     }
 
+    private String monthTitle(Calendar cal) {
+        return new SimpleDateFormat("MMMM yyyy", Locale.getDefault()).format(cal.getTime());
+    }
+
     private long startOfTodayMillis() {
         Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
+        zeroTime(calendar);
         return calendar.getTimeInMillis();
     }
 
+    private long timeForDate(String dateKey, int hour, int minute) {
+        Calendar cal = Calendar.getInstance();
+
+        try {
+            Date date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).parse(dateKey);
+            if (date != null) {
+                cal.setTime(date);
+            }
+        } catch (Exception ignored) {
+        }
+
+        cal.set(Calendar.HOUR_OF_DAY, hour);
+        cal.set(Calendar.MINUTE, minute);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
+        return cal.getTimeInMillis();
+    }
+
+    private String formatWorkDays(double value) {
+        int whole = (int) value;
+        double decimal = value - whole;
+
+        if (Math.abs(decimal - 0.5) < 0.01) {
+            if (whole == 0) {
+                return "1/2 day";
+            }
+            return whole + " 1/2 days";
+        }
+
+        if (whole == 1) {
+            return "1 day";
+        }
+
+        return whole + " days";
+    }
+
+    private String emptyFallback(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            return "-";
+        }
+        return text;
+    }
+
     private static String safeString(DocumentSnapshot doc, String key, String fallback) {
+        if (doc == null) {
+            return fallback;
+        }
+
         Object value = doc.get(key);
 
         if (value == null) {
@@ -1363,6 +2331,10 @@ public class MainActivity extends Activity {
     }
 
     private static long safeLong(DocumentSnapshot doc, String key, long fallback) {
+        if (doc == null) {
+            return fallback;
+        }
+
         Object value = doc.get(key);
 
         if (value instanceof Long) {
@@ -1378,6 +2350,10 @@ public class MainActivity extends Activity {
         }
 
         return fallback;
+    }
+
+    private interface BossNoteCallback {
+        void onNote(String note);
     }
 
     private static class BusinessInfo {
@@ -1405,7 +2381,6 @@ public class MainActivity extends Activity {
         String status;
         String dueDate;
         String completionNote;
-        String completedAtText;
         long dueDateMillis;
         long createdAtMillis;
 
@@ -1423,16 +2398,86 @@ public class MainActivity extends Activity {
             task.dueDateMillis = safeLong(doc, "dueDateMillis", 0);
             task.createdAtMillis = safeLong(doc, "createdAtMillis", 0);
 
-            Object completedAt = doc.get("completedAt");
-
-            if (completedAt instanceof Timestamp) {
-                Date date = ((Timestamp) completedAt).toDate();
-                task.completedAtText = new SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(date);
-            } else {
-                task.completedAtText = "";
-            }
-
             return task;
         }
+    }
+
+    private static class AttendanceRecord {
+        String date;
+        long checkInMillis;
+        long checkOutMillis;
+
+        static AttendanceRecord from(DocumentSnapshot doc) {
+            AttendanceRecord record = new AttendanceRecord();
+
+            record.date = safeString(doc, "date", "");
+            record.checkInMillis = safeLong(doc, "checkInMillis", 0);
+            record.checkOutMillis = safeLong(doc, "checkOutMillis", 0);
+
+            return record;
+        }
+    }
+
+    private static class LeaveRequest {
+        String id;
+        String businessId;
+        String managerId;
+        String managerName;
+        String leaveDate;
+        String leaveDateText;
+        String monthKey;
+        String reason;
+        String status;
+        String bossNote;
+        long createdAtMillis;
+
+        static LeaveRequest from(DocumentSnapshot doc) {
+            LeaveRequest request = new LeaveRequest();
+
+            request.id = doc.getId();
+            request.businessId = safeString(doc, "businessId", "");
+            request.managerId = safeString(doc, "managerId", "");
+            request.managerName = safeString(doc, "managerName", "");
+            request.leaveDate = safeString(doc, "leaveDate", "");
+            request.leaveDateText = safeString(doc, "leaveDateText", request.leaveDate);
+            request.monthKey = safeString(doc, "monthKey", "");
+            request.reason = safeString(doc, "reason", "");
+            request.status = safeString(doc, "status", "Pending");
+            request.bossNote = safeString(doc, "bossNote", "");
+            request.createdAtMillis = safeLong(doc, "createdAtMillis", 0);
+
+            return request;
+        }
+    }
+
+    private static class AttendanceDecision {
+        String label;
+        double value;
+
+        AttendanceDecision(String label, double value) {
+            this.label = label;
+            this.value = value;
+        }
+    }
+
+    private static class DayDisplay {
+        String label;
+        int color;
+        String dot;
+
+        DayDisplay(String label, int color, String dot) {
+            this.label = label;
+            this.color = color;
+            this.dot = dot;
+        }
+    }
+
+    private static class CalendarSummary {
+        int fullDays = 0;
+        int halfDays = 0;
+        int paidLeaves = 0;
+        int absentDays = 0;
+        int sundays = 0;
+        double totalWorked = 0.0;
     }
 }
