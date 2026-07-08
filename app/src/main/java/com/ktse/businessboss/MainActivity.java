@@ -1,1242 +1,1438 @@
 package com.ktse.businessboss;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
-import android.content.Intent;
+import android.content.Context;
 import android.content.SharedPreferences;
-import android.database.Cursor;
 import android.graphics.Color;
-import android.net.Uri;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.provider.OpenableColumns;
+import android.text.InputType;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.Spinner;
 import android.widget.TextView;
-
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AppCompatActivity;
+import android.widget.Toast;
 
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.ListenerRegistration;
-import com.google.firebase.firestore.QueryDocumentSnapshot;
-import com.google.firebase.firestore.QuerySnapshot;
 import com.google.firebase.firestore.SetOptions;
-import com.google.firebase.storage.FirebaseStorage;
-import com.google.firebase.storage.StorageReference;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends Activity {
+
+    private static final String PREF_NAME = "kts_connect_team_prefs";
+    private static final String KEY_ROLE = "saved_role";
+    private static final String KEY_BUSINESS_ID = "saved_business_id";
+    private static final String KEY_BOSS_BUSINESS_ID = "saved_boss_business_id";
+
+    private static final String ROLE_BOSS = "boss";
+    private static final String ROLE_MANAGER = "manager";
 
     private static final String BOSS_PIN = "1234";
-    private static final String MANAGER_PIN = "1111";
-    private static final String PREFS_NAME = "kts_connect_team_prefs";
-    private static final String KEY_ROLE = "saved_role";
 
-    private LinearLayout loginBox;
-    private LinearLayout appContentBox;
-    private EditText rolePinInput;
-    private Button enterBossButton;
-    private Button enterManagerButton;
-    private Button logoutButton;
-    private TextView loginStatusText;
-
-    private TextView companyTitleText;
-    private TextView modeBadgeText;
-    private TextView dashboardSummaryText;
-    private TextView managerCardText;
-    private TextView attendanceCardText;
-    private TextView attendanceHistoryText;
-    private TextView currentTaskText;
-    private TextView taskSummaryText;
-    private TextView statusText;
-
-    private Button checkInButton;
-    private Button checkOutButton;
-    private Button reassignTaskButton;
-    private Button assignTaskButton;
-    private Button filterAllButton;
-    private Button filterPendingButton;
-    private Button filterCompletedButton;
-
-    private EditText taskTitleInput;
-    private EditText taskDescriptionInput;
-    private Spinner taskPrioritySpinner;
-    private EditText taskDueDateInput;
-
-    private LinearLayout assignTaskBox;
-    private LinearLayout managerActionBox;
-    private LinearLayout taskListContainer;
+    private final BusinessInfo[] businesses = new BusinessInfo[]{
+            new BusinessInfo("global_plaza", "Global Plaza", "manager_global_plaza", "Hrishikesh", "1111"),
+            new BusinessInfo("kts_farms_tours", "KTS Farms & Tours", "manager_kts_farms_tours", "Richard", "2222"),
+            new BusinessInfo("kts_resorts", "KTS Resorts", "manager_kts_resorts", "Riya", "3333")
+    };
 
     private FirebaseFirestore db;
-    private FirebaseStorage storage;
-    private DocumentReference companyRef;
-    private DocumentReference managerRef;
-    private DocumentReference attendanceRef;
-    private DocumentReference currentTaskRef;
 
-    private ListenerRegistration companyListener;
-    private ListenerRegistration managerListener;
+    private FrameLayout appBackground;
+    private ScrollView mainScroll;
+
+    private LinearLayout loginSection;
+    private LinearLayout bossSection;
+    private LinearLayout managerSection;
+
+    private EditText loginPinInput;
+    private Button bossLoginButton;
+    private Button managerLoginButton;
+
+    private TextView bossSubtitleText;
+    private TextView bossDateText;
+    private Button bossLogoutButton;
+    private Spinner bossBusinessSpinner;
+    private TextView bossSelectedManagerText;
+
+    private TextView bossCheckedInCount;
+    private TextView bossPendingCount;
+    private TextView bossCompletedCount;
+    private TextView bossHighCount;
+
+    private EditText bossTaskTitleInput;
+    private EditText bossTaskDetailsInput;
+    private Spinner bossPrioritySpinner;
+    private Button bossDueDateButton;
+    private Button bossAssignTaskButton;
+
+    private Spinner bossStatusFilterSpinner;
+    private Spinner bossPriorityFilterSpinner;
+    private LinearLayout bossTaskList;
+    private LinearLayout bossActivityList;
+
+    private TextView managerBusinessText;
+    private TextView managerDateText;
+    private TextView managerNameText;
+    private TextView managerAttendanceStatus;
+    private Button managerLogoutButton;
+    private Button managerCheckInButton;
+    private Button managerCheckOutButton;
+
+    private TextView managerPendingCount;
+    private TextView managerCompletedCount;
+    private Spinner managerStatusFilterSpinner;
+    private LinearLayout managerTaskList;
+
+    private ListenerRegistration taskListener;
     private ListenerRegistration attendanceListener;
-    private ListenerRegistration attendanceHistoryListener;
-    private ListenerRegistration tasksListener;
+    private ListenerRegistration bossStatsTaskListener;
+    private ListenerRegistration bossStatsAttendanceListener;
+    private ListenerRegistration activityListener;
 
-    private QuerySnapshot latestTasksSnapshot;
+    private BusinessInfo selectedBossBusiness;
+    private BusinessInfo loggedManagerBusiness;
+    private Calendar selectedDueDate;
 
-    private final Map<String, Uri> selectedAttachmentUris = new HashMap<>();
-    private final Map<String, String> selectedAttachmentNames = new HashMap<>();
-    private String pendingAttachmentTaskId = "";
-
-    private String currentTaskId = "task_1";
-    private String managerId = "manager_1";
-    private boolean isBossView = true;
-    private String taskFilter = "all";
-
-    private String dashboardBusinessName = "Global Plaza";
-    private String dashboardManagerName = "Manager 1";
-    private boolean dashboardManagerCheckedIn = false;
-    private String dashboardTodayAttendanceStatus = "-";
-    private String dashboardCheckInTime = "-";
-    private String dashboardCheckOutTime = "-";
-    private int dashboardPendingTasks = 0;
-    private int dashboardCompletedTasks = 0;
-    private int dashboardTotalTasks = 0;
-
-    private ActivityResultLauncher<Intent> filePickerLauncher;
+    private final int WHITE = Color.WHITE;
+    private final int TEXT_LIGHT = Color.parseColor("#EAF2FF");
+    private final int MUTED_LIGHT = Color.parseColor("#AFC1D8");
+    private final int BLUE = Color.parseColor("#2563EB");
+    private final int GREEN = Color.parseColor("#16A34A");
+    private final int RED = Color.parseColor("#DC2626");
+    private final int ORANGE = Color.parseColor("#F97316");
+    private final int PURPLE = Color.parseColor("#7C3AED");
+    private final int CYAN = Color.parseColor("#06B6D4");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        bindViews();
-        setupFirebase();
-        setupPrioritySpinner();
-        setupFilePicker();
-        setupClicks();
-
-        startRealtimeListeners();
-        restoreSavedRoleOrShowLogin();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        stopRealtimeListeners();
-    }
-
-    private void bindViews() {
-        loginBox = findViewById(R.id.loginBox);
-        appContentBox = findViewById(R.id.appContentBox);
-        rolePinInput = findViewById(R.id.rolePinInput);
-        enterBossButton = findViewById(R.id.enterBossButton);
-        enterManagerButton = findViewById(R.id.enterManagerButton);
-        logoutButton = findViewById(R.id.logoutButton);
-        loginStatusText = findViewById(R.id.loginStatusText);
-
-        companyTitleText = findViewById(R.id.companyTitleText);
-        modeBadgeText = findViewById(R.id.modeBadgeText);
-        dashboardSummaryText = findViewById(R.id.dashboardSummaryText);
-        managerCardText = findViewById(R.id.managerCardText);
-        attendanceCardText = findViewById(R.id.attendanceCardText);
-        attendanceHistoryText = findViewById(R.id.attendanceHistoryText);
-        currentTaskText = findViewById(R.id.currentTaskText);
-        taskSummaryText = findViewById(R.id.taskSummaryText);
-        statusText = findViewById(R.id.statusText);
-
-        checkInButton = findViewById(R.id.checkInButton);
-        checkOutButton = findViewById(R.id.checkOutButton);
-        reassignTaskButton = findViewById(R.id.reassignTaskButton);
-        assignTaskButton = findViewById(R.id.assignTaskButton);
-        filterAllButton = findViewById(R.id.filterAllButton);
-        filterPendingButton = findViewById(R.id.filterPendingButton);
-        filterCompletedButton = findViewById(R.id.filterCompletedButton);
-
-        taskTitleInput = findViewById(R.id.taskTitleInput);
-        taskDescriptionInput = findViewById(R.id.taskDescriptionInput);
-        taskPrioritySpinner = findViewById(R.id.taskPrioritySpinner);
-        taskDueDateInput = findViewById(R.id.taskDueDateInput);
-
-        assignTaskBox = findViewById(R.id.assignTaskBox);
-        managerActionBox = findViewById(R.id.managerActionBox);
-        taskListContainer = findViewById(R.id.taskListContainer);
-    }
-
-    private void setupFirebase() {
         db = FirebaseFirestore.getInstance();
-        storage = FirebaseStorage.getInstance();
 
-        companyRef = db.collection("companies").document("global_plaza");
-        managerRef = companyRef.collection("users").document(managerId);
-        attendanceRef = companyRef.collection("attendance").document(getTodayAttendanceId());
-    }
+        bindViews();
+        setupUiStyle();
+        setupSpinners();
+        setupClickListeners();
 
-    private void setupPrioritySpinner() {
-        String[] priorities = {"Normal", "High", "Low", "Urgent"};
+        String savedRole = getPrefs().getString(KEY_ROLE, "");
+        String savedBusinessId = getPrefs().getString(KEY_BUSINESS_ID, "");
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
-                this,
-                android.R.layout.simple_spinner_dropdown_item,
-                priorities
-        );
-
-        taskPrioritySpinner.setAdapter(adapter);
-    }
-
-    private void setupFilePicker() {
-        filePickerLauncher = registerForActivityResult(
-                new ActivityResultContracts.StartActivityForResult(),
-                result -> {
-                    if (result.getResultCode() != RESULT_OK || result.getData() == null) {
-                        statusText.setText("No file selected.");
-                        return;
-                    }
-
-                    Uri uri = result.getData().getData();
-
-                    if (uri == null || pendingAttachmentTaskId.isEmpty()) {
-                        statusText.setText("File selection failed.");
-                        return;
-                    }
-
-                    try {
-                        getContentResolver().takePersistableUriPermission(
-                                uri,
-                                Intent.FLAG_GRANT_READ_URI_PERMISSION
-                        );
-                    } catch (Exception ignored) {
-                    }
-
-                    String fileName = getFileNameFromUri(uri);
-
-                    selectedAttachmentUris.put(pendingAttachmentTaskId, uri);
-                    selectedAttachmentNames.put(pendingAttachmentTaskId, fileName);
-
-                    statusText.setText("Selected file for task: " + fileName);
-
-                    if (latestTasksSnapshot != null) {
-                        renderTaskList(latestTasksSnapshot);
-                    }
-                }
-        );
-    }
-
-    private void setupClicks() {
-        enterBossButton.setOnClickListener(v -> attemptBossLogin());
-        enterManagerButton.setOnClickListener(v -> attemptManagerLogin());
-        logoutButton.setOnClickListener(v -> logoutAndShowLogin());
-
-        checkInButton.setOnClickListener(v -> managerCheckIn());
-        checkOutButton.setOnClickListener(v -> managerCheckOut());
-        reassignTaskButton.setOnClickListener(v -> bossSetCurrentTaskPending());
-        assignTaskButton.setOnClickListener(v -> bossAssignNewTask());
-
-        filterAllButton.setOnClickListener(v -> applyTaskFilter("all"));
-        filterPendingButton.setOnClickListener(v -> applyTaskFilter("pending"));
-        filterCompletedButton.setOnClickListener(v -> applyTaskFilter("completed"));
-
-        taskDueDateInput.setOnClickListener(v -> openDueDatePicker());
-    }
-
-    private void restoreSavedRoleOrShowLogin() {
-        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        String savedRole = prefs.getString(KEY_ROLE, "");
-
-        if ("boss".equals(savedRole)) {
-            loginBox.setVisibility(View.GONE);
-            appContentBox.setVisibility(View.VISIBLE);
-            showBossView();
-        } else if ("manager".equals(savedRole)) {
-            loginBox.setVisibility(View.GONE);
-            appContentBox.setVisibility(View.VISIBLE);
-            showManagerView();
+        if (ROLE_BOSS.equals(savedRole)) {
+            showBossDashboard();
+        } else if (ROLE_MANAGER.equals(savedRole)) {
+            BusinessInfo business = findBusinessById(savedBusinessId);
+            if (business != null) {
+                showManagerDashboard(business);
+            } else {
+                showLoginScreen();
+            }
         } else {
             showLoginScreen();
         }
     }
 
+    private void bindViews() {
+        appBackground = findViewById(R.id.appBackground);
+        mainScroll = findViewById(R.id.mainScroll);
+
+        loginSection = findViewById(R.id.loginSection);
+        bossSection = findViewById(R.id.bossSection);
+        managerSection = findViewById(R.id.managerSection);
+
+        loginPinInput = findViewById(R.id.loginPinInput);
+        bossLoginButton = findViewById(R.id.bossLoginButton);
+        managerLoginButton = findViewById(R.id.managerLoginButton);
+
+        bossSubtitleText = findViewById(R.id.bossSubtitleText);
+        bossDateText = findViewById(R.id.bossDateText);
+        bossLogoutButton = findViewById(R.id.bossLogoutButton);
+        bossBusinessSpinner = findViewById(R.id.bossBusinessSpinner);
+        bossSelectedManagerText = findViewById(R.id.bossSelectedManagerText);
+
+        bossCheckedInCount = findViewById(R.id.bossCheckedInCount);
+        bossPendingCount = findViewById(R.id.bossPendingCount);
+        bossCompletedCount = findViewById(R.id.bossCompletedCount);
+        bossHighCount = findViewById(R.id.bossHighCount);
+
+        bossTaskTitleInput = findViewById(R.id.bossTaskTitleInput);
+        bossTaskDetailsInput = findViewById(R.id.bossTaskDetailsInput);
+        bossPrioritySpinner = findViewById(R.id.bossPrioritySpinner);
+        bossDueDateButton = findViewById(R.id.bossDueDateButton);
+        bossAssignTaskButton = findViewById(R.id.bossAssignTaskButton);
+
+        bossStatusFilterSpinner = findViewById(R.id.bossStatusFilterSpinner);
+        bossPriorityFilterSpinner = findViewById(R.id.bossPriorityFilterSpinner);
+        bossTaskList = findViewById(R.id.bossTaskList);
+        bossActivityList = findViewById(R.id.bossActivityList);
+
+        managerBusinessText = findViewById(R.id.managerBusinessText);
+        managerDateText = findViewById(R.id.managerDateText);
+        managerNameText = findViewById(R.id.managerNameText);
+        managerAttendanceStatus = findViewById(R.id.managerAttendanceStatus);
+        managerLogoutButton = findViewById(R.id.managerLogoutButton);
+        managerCheckInButton = findViewById(R.id.managerCheckInButton);
+        managerCheckOutButton = findViewById(R.id.managerCheckOutButton);
+
+        managerPendingCount = findViewById(R.id.managerPendingCount);
+        managerCompletedCount = findViewById(R.id.managerCompletedCount);
+        managerStatusFilterSpinner = findViewById(R.id.managerStatusFilterSpinner);
+        managerTaskList = findViewById(R.id.managerTaskList);
+    }
+
+    private void setupSpinners() {
+        String[] businessNames = new String[businesses.length];
+        for (int i = 0; i < businesses.length; i++) {
+            businessNames[i] = businesses[i].businessName;
+        }
+
+        setSpinnerItems(bossBusinessSpinner, businessNames);
+        setSpinnerItems(bossPrioritySpinner, new String[]{"High", "Medium", "Low"});
+        bossPrioritySpinner.setSelection(1);
+
+        setSpinnerItems(bossStatusFilterSpinner, new String[]{"All", "Pending", "Completed"});
+        setSpinnerItems(bossPriorityFilterSpinner, new String[]{"All", "High", "Medium", "Low"});
+        setSpinnerItems(managerStatusFilterSpinner, new String[]{"All", "Pending", "Completed"});
+
+        bossBusinessSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (bossSection.getVisibility() == View.VISIBLE) {
+                    BusinessInfo business = businesses[position];
+                    getPrefs().edit().putString(KEY_BOSS_BUSINESS_ID, business.businessId).apply();
+                    applyBossBusiness(business);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
+        AdapterView.OnItemSelectedListener bossFilterListener = new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (bossSection.getVisibility() == View.VISIBLE && selectedBossBusiness != null) {
+                    listenBossTasks(selectedBossBusiness);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        };
+
+        bossStatusFilterSpinner.setOnItemSelectedListener(bossFilterListener);
+        bossPriorityFilterSpinner.setOnItemSelectedListener(bossFilterListener);
+
+        managerStatusFilterSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (managerSection.getVisibility() == View.VISIBLE && loggedManagerBusiness != null) {
+                    listenManagerTasks(loggedManagerBusiness);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+    }
+
+    private void setupClickListeners() {
+        bossLoginButton.setOnClickListener(v -> {
+            hideKeyboard(loginPinInput);
+            String pin = loginPinInput.getText().toString().trim();
+
+            if (BOSS_PIN.equals(pin)) {
+                getPrefs().edit()
+                        .putString(KEY_ROLE, ROLE_BOSS)
+                        .remove(KEY_BUSINESS_ID)
+                        .apply();
+
+                loginPinInput.setText("");
+                showBossDashboard();
+            } else {
+                toast("Wrong Boss PIN");
+            }
+        });
+
+        managerLoginButton.setOnClickListener(v -> {
+            hideKeyboard(loginPinInput);
+            String pin = loginPinInput.getText().toString().trim();
+
+            BusinessInfo business = findBusinessByManagerPin(pin);
+
+            if (business != null) {
+                getPrefs().edit()
+                        .putString(KEY_ROLE, ROLE_MANAGER)
+                        .putString(KEY_BUSINESS_ID, business.businessId)
+                        .apply();
+
+                loginPinInput.setText("");
+                showManagerDashboard(business);
+            } else {
+                toast("Wrong Manager PIN");
+            }
+        });
+
+        bossLogoutButton.setOnClickListener(v -> logout());
+        managerLogoutButton.setOnClickListener(v -> logout());
+
+        bossDueDateButton.setOnClickListener(v -> openDueDatePicker());
+
+        bossAssignTaskButton.setOnClickListener(v -> {
+            hideKeyboard(bossTaskTitleInput);
+
+            if (selectedBossBusiness == null) {
+                toast("Select business");
+                return;
+            }
+
+            String title = bossTaskTitleInput.getText().toString().trim();
+            String details = bossTaskDetailsInput.getText().toString().trim();
+            String priority = bossPrioritySpinner.getSelectedItem().toString();
+
+            if (title.isEmpty()) {
+                toast("Enter task title");
+                return;
+            }
+
+            assignTask(selectedBossBusiness, title, details, priority);
+        });
+
+        managerCheckInButton.setOnClickListener(v -> {
+            if (loggedManagerBusiness != null) {
+                updateAttendance(loggedManagerBusiness, true);
+            }
+        });
+
+        managerCheckOutButton.setOnClickListener(v -> {
+            if (loggedManagerBusiness != null) {
+                updateAttendance(loggedManagerBusiness, false);
+            }
+        });
+    }
+
     private void showLoginScreen() {
-        loginBox.setVisibility(View.VISIBLE);
-        appContentBox.setVisibility(View.GONE);
-        rolePinInput.setText("");
-        loginStatusText.setText("Test PINs: Boss 1234 / Manager 1111");
+        detachBusinessListeners();
+
+        loginSection.setVisibility(View.VISIBLE);
+        bossSection.setVisibility(View.GONE);
+        managerSection.setVisibility(View.GONE);
+
+        mainScroll.smoothScrollTo(0, 0);
     }
 
-    private void logoutAndShowLogin() {
-        getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                .edit()
-                .remove(KEY_ROLE)
-                .apply();
+    private void showBossDashboard() {
+        loginSection.setVisibility(View.GONE);
+        bossSection.setVisibility(View.VISIBLE);
+        managerSection.setVisibility(View.GONE);
 
-        showLoginScreen();
+        selectedDueDate = Calendar.getInstance();
+        selectedDueDate.add(Calendar.DAY_OF_MONTH, 1);
+        bossDueDateButton.setText("Due: " + formatDate(selectedDueDate.getTime()));
+
+        bossDateText.setText(readableDate());
+
+        String savedBossBusinessId = getPrefs().getString(KEY_BOSS_BUSINESS_ID, businesses[0].businessId);
+        int selectedIndex = findBusinessIndexById(savedBossBusinessId);
+
+        bossBusinessSpinner.setSelection(selectedIndex);
+        applyBossBusiness(businesses[selectedIndex]);
+
+        mainScroll.smoothScrollTo(0, 0);
     }
 
-    private void attemptBossLogin() {
-        String pin = rolePinInput.getText().toString().trim();
+    private void showManagerDashboard(BusinessInfo business) {
+        detachBusinessListeners();
 
-        if (BOSS_PIN.equals(pin)) {
-            getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                    .edit()
-                    .putString(KEY_ROLE, "boss")
-                    .apply();
+        loggedManagerBusiness = business;
 
-            loginBox.setVisibility(View.GONE);
-            appContentBox.setVisibility(View.VISIBLE);
-            showBossView();
+        loginSection.setVisibility(View.GONE);
+        bossSection.setVisibility(View.GONE);
+        managerSection.setVisibility(View.VISIBLE);
+
+        managerBusinessText.setText(business.businessName);
+        managerDateText.setText(readableDate());
+        managerNameText.setText("Manager: " + business.managerName);
+
+        managerStatusFilterSpinner.setSelection(0);
+
+        listenManagerAttendance(business);
+        listenManagerTasks(business);
+
+        mainScroll.smoothScrollTo(0, 0);
+    }
+
+    private void applyBossBusiness(BusinessInfo business) {
+        detachBusinessListeners();
+
+        selectedBossBusiness = business;
+
+        bossSubtitleText.setText(business.businessName + " Control Panel");
+        bossSelectedManagerText.setText("Manager: " + business.managerName + "  •  Manager PIN: " + business.managerPin);
+
+        bossCheckedInCount.setText("0");
+        bossPendingCount.setText("0");
+        bossCompletedCount.setText("0");
+        bossHighCount.setText("0");
+
+        bossTaskList.removeAllViews();
+        bossActivityList.removeAllViews();
+
+        startBossStats(business);
+        listenBossTasks(business);
+        listenActivityLogs(business);
+    }
+
+    private void assignTask(BusinessInfo business, String title, String details, String priority) {
+        long now = System.currentTimeMillis();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("businessId", business.businessId);
+        data.put("businessName", business.businessName);
+        data.put("title", title);
+        data.put("description", details);
+        data.put("assignedTo", business.managerId);
+        data.put("assignedName", business.managerName);
+        data.put("priority", priority);
+        data.put("status", "Pending");
+        data.put("completionNote", "");
+        data.put("createdBy", "Boss");
+        data.put("createdAt", FieldValue.serverTimestamp());
+        data.put("createdAtMillis", now);
+        data.put("updatedAt", FieldValue.serverTimestamp());
+        data.put("updatedAtMillis", now);
+
+        if (selectedDueDate != null) {
+            Calendar due = Calendar.getInstance();
+            due.setTime(selectedDueDate.getTime());
+            due.set(Calendar.HOUR_OF_DAY, 0);
+            due.set(Calendar.MINUTE, 0);
+            due.set(Calendar.SECOND, 0);
+            due.set(Calendar.MILLISECOND, 0);
+
+            data.put("dueDate", formatDate(due.getTime()));
+            data.put("dueDateMillis", due.getTimeInMillis());
+        }
+
+        db.collection("companies")
+                .document(business.businessId)
+                .collection("tasks")
+                .add(data)
+                .addOnSuccessListener(documentReference -> {
+                    toast("Task assigned to " + business.managerName);
+
+                    addActivityLog(business, "Boss assigned task to " + business.managerName + ": " + title);
+
+                    bossTaskTitleInput.setText("");
+                    bossTaskDetailsInput.setText("");
+                    bossPrioritySpinner.setSelection(1);
+
+                    selectedDueDate = Calendar.getInstance();
+                    selectedDueDate.add(Calendar.DAY_OF_MONTH, 1);
+                    bossDueDateButton.setText("Due: " + formatDate(selectedDueDate.getTime()));
+                })
+                .addOnFailureListener(e -> toast("Task failed: " + e.getMessage()));
+    }
+
+    private void updateAttendance(BusinessInfo business, boolean checkIn) {
+        String today = todayKey();
+        String docId = business.managerId + "_" + today;
+        long now = System.currentTimeMillis();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("businessId", business.businessId);
+        data.put("businessName", business.businessName);
+        data.put("managerId", business.managerId);
+        data.put("managerName", business.managerName);
+        data.put("date", today);
+        data.put("updatedAt", FieldValue.serverTimestamp());
+        data.put("updatedAtMillis", now);
+
+        if (checkIn) {
+            data.put("status", "Checked In");
+            data.put("checkedIn", true);
+            data.put("checkedOut", false);
+            data.put("checkInTime", readableTime());
+            data.put("checkInMillis", now);
         } else {
-            loginStatusText.setText("Wrong Boss PIN.");
+            data.put("status", "Checked Out");
+            data.put("checkedIn", false);
+            data.put("checkedOut", true);
+            data.put("checkOutTime", readableTime());
+            data.put("checkOutMillis", now);
         }
+
+        db.collection("companies")
+                .document(business.businessId)
+                .collection("attendance")
+                .document(docId)
+                .set(data, SetOptions.merge())
+                .addOnSuccessListener(unused -> {
+                    if (checkIn) {
+                        toast("Checked in");
+                        addActivityLog(business, business.managerName + " checked in");
+                    } else {
+                        toast("Checked out");
+                        addActivityLog(business, business.managerName + " checked out");
+                    }
+                })
+                .addOnFailureListener(e -> toast("Attendance failed: " + e.getMessage()));
     }
 
-    private void attemptManagerLogin() {
-        String pin = rolePinInput.getText().toString().trim();
+    private void completeTask(BusinessInfo business, WorkTask task, String note) {
+        long now = System.currentTimeMillis();
 
-        if (MANAGER_PIN.equals(pin)) {
-            getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-                    .edit()
-                    .putString(KEY_ROLE, "manager")
-                    .apply();
+        Map<String, Object> data = new HashMap<>();
+        data.put("status", "Completed");
+        data.put("completionNote", note);
+        data.put("completedAt", FieldValue.serverTimestamp());
+        data.put("completedAtMillis", now);
+        data.put("updatedAt", FieldValue.serverTimestamp());
+        data.put("updatedAtMillis", now);
 
-            loginBox.setVisibility(View.GONE);
-            appContentBox.setVisibility(View.VISIBLE);
-            showManagerView();
+        db.collection("companies")
+                .document(business.businessId)
+                .collection("tasks")
+                .document(task.id)
+                .set(data, SetOptions.merge())
+                .addOnSuccessListener(unused -> {
+                    toast("Task completed");
+                    addActivityLog(business, business.managerName + " completed task: " + task.title);
+                })
+                .addOnFailureListener(e -> toast("Completion failed: " + e.getMessage()));
+    }
+
+    private void reopenTask(BusinessInfo business, WorkTask task) {
+        long now = System.currentTimeMillis();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("status", "Pending");
+        data.put("updatedAt", FieldValue.serverTimestamp());
+        data.put("updatedAtMillis", now);
+
+        db.collection("companies")
+                .document(business.businessId)
+                .collection("tasks")
+                .document(task.id)
+                .set(data, SetOptions.merge())
+                .addOnSuccessListener(unused -> {
+                    toast("Task reopened");
+                    addActivityLog(business, "Boss reopened task: " + task.title);
+                })
+                .addOnFailureListener(e -> toast("Reopen failed: " + e.getMessage()));
+    }
+
+    private void startBossStats(BusinessInfo business) {
+        bossStatsTaskListener = db.collection("companies")
+                .document(business.businessId)
+                .collection("tasks")
+                .addSnapshotListener((snapshots, error) -> {
+                    if (error != null || snapshots == null) {
+                        return;
+                    }
+
+                    int pending = 0;
+                    int completed = 0;
+                    int high = 0;
+
+                    for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                        WorkTask task = WorkTask.from(doc);
+
+                        if ("Completed".equalsIgnoreCase(task.status)) {
+                            completed++;
+                        } else {
+                            pending++;
+                        }
+
+                        if ("High".equalsIgnoreCase(task.priority)) {
+                            high++;
+                        }
+                    }
+
+                    bossPendingCount.setText(String.valueOf(pending));
+                    bossCompletedCount.setText(String.valueOf(completed));
+                    bossHighCount.setText(String.valueOf(high));
+                });
+
+        bossStatsAttendanceListener = db.collection("companies")
+                .document(business.businessId)
+                .collection("attendance")
+                .addSnapshotListener((snapshots, error) -> {
+                    if (error != null || snapshots == null) {
+                        return;
+                    }
+
+                    int checkedIn = 0;
+                    String today = todayKey();
+
+                    for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                        String date = safeString(doc, "date", "");
+                        Boolean status = doc.getBoolean("checkedIn");
+
+                        if (today.equals(date) && status != null && status) {
+                            checkedIn++;
+                        }
+                    }
+
+                    bossCheckedInCount.setText(String.valueOf(checkedIn));
+                });
+    }
+
+    private void listenBossTasks(BusinessInfo business) {
+        if (taskListener != null) {
+            taskListener.remove();
+            taskListener = null;
+        }
+
+        bossTaskList.removeAllViews();
+        bossTaskList.addView(infoText("Loading tasks..."));
+
+        String statusFilter = bossStatusFilterSpinner.getSelectedItem().toString();
+        String priorityFilter = bossPriorityFilterSpinner.getSelectedItem().toString();
+
+        taskListener = db.collection("companies")
+                .document(business.businessId)
+                .collection("tasks")
+                .addSnapshotListener((snapshots, error) -> {
+                    bossTaskList.removeAllViews();
+
+                    if (error != null) {
+                        bossTaskList.addView(errorText("Failed to load tasks: " + error.getMessage()));
+                        return;
+                    }
+
+                    if (snapshots == null || snapshots.isEmpty()) {
+                        bossTaskList.addView(infoText("No tasks assigned yet."));
+                        return;
+                    }
+
+                    ArrayList<WorkTask> tasks = new ArrayList<>();
+
+                    for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                        WorkTask task = WorkTask.from(doc);
+
+                        boolean statusOk = "All".equals(statusFilter) || statusFilter.equalsIgnoreCase(task.status);
+                        boolean priorityOk = "All".equals(priorityFilter) || priorityFilter.equalsIgnoreCase(task.priority);
+
+                        if (statusOk && priorityOk) {
+                            tasks.add(task);
+                        }
+                    }
+
+                    Collections.sort(tasks, (a, b) -> Long.compare(b.createdAtMillis, a.createdAtMillis));
+
+                    if (tasks.isEmpty()) {
+                        bossTaskList.addView(infoText("No tasks match this filter."));
+                        return;
+                    }
+
+                    for (WorkTask task : tasks) {
+                        bossTaskList.addView(bossTaskView(business, task));
+                    }
+                });
+    }
+
+    private void listenManagerTasks(BusinessInfo business) {
+        if (taskListener != null) {
+            taskListener.remove();
+            taskListener = null;
+        }
+
+        managerTaskList.removeAllViews();
+        managerTaskList.addView(infoText("Loading your tasks..."));
+
+        String statusFilter = managerStatusFilterSpinner.getSelectedItem().toString();
+
+        taskListener = db.collection("companies")
+                .document(business.businessId)
+                .collection("tasks")
+                .whereEqualTo("assignedTo", business.managerId)
+                .addSnapshotListener((snapshots, error) -> {
+                    managerTaskList.removeAllViews();
+
+                    if (error != null) {
+                        managerTaskList.addView(errorText("Failed to load tasks: " + error.getMessage()));
+                        return;
+                    }
+
+                    if (snapshots == null || snapshots.isEmpty()) {
+                        managerPendingCount.setText("0");
+                        managerCompletedCount.setText("0");
+                        managerTaskList.addView(infoText("No tasks assigned yet."));
+                        return;
+                    }
+
+                    int pending = 0;
+                    int completed = 0;
+                    ArrayList<WorkTask> tasks = new ArrayList<>();
+
+                    for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                        WorkTask task = WorkTask.from(doc);
+
+                        if ("Completed".equalsIgnoreCase(task.status)) {
+                            completed++;
+                        } else {
+                            pending++;
+                        }
+
+                        boolean statusOk = "All".equals(statusFilter) || statusFilter.equalsIgnoreCase(task.status);
+
+                        if (statusOk) {
+                            tasks.add(task);
+                        }
+                    }
+
+                    managerPendingCount.setText(String.valueOf(pending));
+                    managerCompletedCount.setText(String.valueOf(completed));
+
+                    Collections.sort(tasks, (a, b) -> Long.compare(b.createdAtMillis, a.createdAtMillis));
+
+                    if (tasks.isEmpty()) {
+                        managerTaskList.addView(infoText("No tasks match this filter."));
+                        return;
+                    }
+
+                    for (WorkTask task : tasks) {
+                        managerTaskList.addView(managerTaskView(business, task));
+                    }
+                });
+    }
+
+    private void listenManagerAttendance(BusinessInfo business) {
+        if (attendanceListener != null) {
+            attendanceListener.remove();
+            attendanceListener = null;
+        }
+
+        String docId = business.managerId + "_" + todayKey();
+
+        attendanceListener = db.collection("companies")
+                .document(business.businessId)
+                .collection("attendance")
+                .document(docId)
+                .addSnapshotListener((snapshot, error) -> {
+                    if (error != null) {
+                        managerAttendanceStatus.setText("Attendance error: " + error.getMessage());
+                        managerAttendanceStatus.setTextColor(Color.parseColor("#FCA5A5"));
+                        return;
+                    }
+
+                    if (snapshot == null || !snapshot.exists()) {
+                        managerAttendanceStatus.setText("Today: Not checked in yet");
+                        managerAttendanceStatus.setTextColor(Color.parseColor("#FDBA74"));
+                        return;
+                    }
+
+                    String status = safeString(snapshot, "status", "Not updated");
+                    String checkIn = safeString(snapshot, "checkInTime", "-");
+                    String checkOut = safeString(snapshot, "checkOutTime", "-");
+
+                    managerAttendanceStatus.setText("Today: " + status + "\nCheck In: " + checkIn + "\nCheck Out: " + checkOut);
+
+                    if ("Checked In".equalsIgnoreCase(status)) {
+                        managerAttendanceStatus.setTextColor(Color.parseColor("#86EFAC"));
+                    } else {
+                        managerAttendanceStatus.setTextColor(MUTED_LIGHT);
+                    }
+                });
+    }
+
+    private void listenActivityLogs(BusinessInfo business) {
+        if (activityListener != null) {
+            activityListener.remove();
+            activityListener = null;
+        }
+
+        bossActivityList.removeAllViews();
+        bossActivityList.addView(infoText("Loading activity..."));
+
+        activityListener = db.collection("companies")
+                .document(business.businessId)
+                .collection("activity_logs")
+                .addSnapshotListener((snapshots, error) -> {
+                    bossActivityList.removeAllViews();
+
+                    if (error != null) {
+                        bossActivityList.addView(errorText("Activity error: " + error.getMessage()));
+                        return;
+                    }
+
+                    if (snapshots == null || snapshots.isEmpty()) {
+                        bossActivityList.addView(infoText("No activity yet."));
+                        return;
+                    }
+
+                    ArrayList<DocumentSnapshot> docs = new ArrayList<>(snapshots.getDocuments());
+
+                    Collections.sort(docs, (a, b) -> {
+                        long am = safeLong(a, "eventAtMillis", 0);
+                        long bm = safeLong(b, "eventAtMillis", 0);
+                        return Long.compare(bm, am);
+                    });
+
+                    int count = Math.min(8, docs.size());
+
+                    for (int i = 0; i < count; i++) {
+                        String message = safeString(docs.get(i), "message", "Activity");
+                        String time = safeString(docs.get(i), "time", "");
+
+                        TextView row = text("• " + message + "\n  " + time, 13, TEXT_LIGHT, Typeface.NORMAL);
+                        row.setPadding(0, dp(7), 0, dp(7));
+                        bossActivityList.addView(row);
+                    }
+                });
+    }
+
+    private void addActivityLog(BusinessInfo business, String message) {
+        long now = System.currentTimeMillis();
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("businessId", business.businessId);
+        data.put("businessName", business.businessName);
+        data.put("message", message);
+        data.put("time", readableDateTime());
+        data.put("eventAt", FieldValue.serverTimestamp());
+        data.put("eventAtMillis", now);
+
+        db.collection("companies")
+                .document(business.businessId)
+                .collection("activity_logs")
+                .add(data);
+    }
+
+    private View bossTaskView(BusinessInfo business, WorkTask task) {
+        LinearLayout card = innerGlassCard();
+
+        LinearLayout topRow = horizontalRow();
+
+        TextView title = text(task.title, 16, WHITE, Typeface.BOLD);
+        title.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        topRow.addView(title);
+
+        topRow.addView(chip(task.status, statusColor(task.status)));
+        card.addView(topRow);
+
+        if (!task.description.isEmpty()) {
+            TextView desc = text(task.description, 14, Color.parseColor("#D8E5F7"), Typeface.NORMAL);
+            desc.setPadding(0, dp(8), 0, 0);
+            card.addView(desc);
+        }
+
+        LinearLayout chips = horizontalRow();
+        chips.setPadding(0, dp(10), 0, 0);
+        chips.addView(chip(task.priority, priorityColor(task.priority)));
+
+        if (isOverdue(task)) {
+            chips.addView(chip("Overdue", RED));
+        } else if (!task.dueDate.isEmpty()) {
+            chips.addView(chip("Due " + task.dueDate, BLUE));
+        }
+
+        card.addView(chips);
+
+        TextView assigned = text("Assigned to: " + task.assignedName, 13, MUTED_LIGHT, Typeface.NORMAL);
+        assigned.setPadding(0, dp(6), 0, 0);
+        card.addView(assigned);
+
+        if ("Completed".equalsIgnoreCase(task.status)) {
+            TextView noteTitle = text("Completion Note", 13, Color.parseColor("#86EFAC"), Typeface.BOLD);
+            noteTitle.setPadding(0, dp(12), 0, dp(6));
+            card.addView(noteTitle);
+
+            TextView note = text(task.completionNote.isEmpty() ? "No note added" : task.completionNote, 14, TEXT_LIGHT, Typeface.NORMAL);
+            note.setPadding(dp(12), dp(9), dp(12), dp(9));
+            note.setBackground(glassStroke(Color.argb(35, 22, 163, 74), dp(14), Color.argb(95, 134, 239, 172)));
+            card.addView(note);
+
+            if (!task.completedAtText.isEmpty()) {
+                TextView completed = text("Completed: " + task.completedAtText, 12, MUTED_LIGHT, Typeface.NORMAL);
+                completed.setPadding(0, dp(7), 0, 0);
+                card.addView(completed);
+            }
+
+            Button reopen = compactFullButton("Reopen Task", ORANGE);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
+            lp.setMargins(0, dp(12), 0, 0);
+            reopen.setLayoutParams(lp);
+            card.addView(reopen);
+
+            reopen.setOnClickListener(v -> reopenTask(business, task));
+        }
+
+        return card;
+    }
+
+    private View managerTaskView(BusinessInfo business, WorkTask task) {
+        LinearLayout card = innerGlassCard();
+
+        LinearLayout topRow = horizontalRow();
+
+        TextView title = text(task.title, 16, WHITE, Typeface.BOLD);
+        title.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        topRow.addView(title);
+
+        topRow.addView(chip(task.status, statusColor(task.status)));
+        card.addView(topRow);
+
+        if (!task.description.isEmpty()) {
+            TextView desc = text(task.description, 14, Color.parseColor("#D8E5F7"), Typeface.NORMAL);
+            desc.setPadding(0, dp(8), 0, 0);
+            card.addView(desc);
+        }
+
+        LinearLayout chips = horizontalRow();
+        chips.setPadding(0, dp(10), 0, 0);
+        chips.addView(chip(task.priority, priorityColor(task.priority)));
+
+        if (isOverdue(task)) {
+            chips.addView(chip("Overdue", RED));
+        } else if (!task.dueDate.isEmpty()) {
+            chips.addView(chip("Due " + task.dueDate, BLUE));
+        }
+
+        card.addView(chips);
+
+        if ("Completed".equalsIgnoreCase(task.status)) {
+            TextView noteTitle = text("Your Completion Note", 13, Color.parseColor("#86EFAC"), Typeface.BOLD);
+            noteTitle.setPadding(0, dp(12), 0, dp(6));
+            card.addView(noteTitle);
+
+            TextView note = text(task.completionNote.isEmpty() ? "No note added" : task.completionNote, 14, TEXT_LIGHT, Typeface.NORMAL);
+            note.setPadding(dp(12), dp(9), dp(12), dp(9));
+            note.setBackground(glassStroke(Color.argb(35, 22, 163, 74), dp(14), Color.argb(95, 134, 239, 172)));
+            card.addView(note);
+
+            if (!task.completedAtText.isEmpty()) {
+                TextView completed = text("Completed: " + task.completedAtText, 12, MUTED_LIGHT, Typeface.NORMAL);
+                completed.setPadding(0, dp(7), 0, 0);
+                card.addView(completed);
+            }
         } else {
-            loginStatusText.setText("Wrong Manager PIN.");
+            Button complete = compactFullButton("Complete Task", GREEN);
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(44));
+            lp.setMargins(0, dp(12), 0, 0);
+            complete.setLayoutParams(lp);
+            card.addView(complete);
+
+            complete.setOnClickListener(v -> showCompletionDialog(business, task));
         }
+
+        return card;
     }
 
-    private void showBossView() {
-        isBossView = true;
+    private void showCompletionDialog(BusinessInfo business, WorkTask task) {
+        EditText noteInput = new EditText(this);
+        noteInput.setHint("Enter completion note");
+        noteInput.setMinLines(3);
+        noteInput.setGravity(Gravity.TOP);
+        noteInput.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        noteInput.setPadding(dp(12), dp(10), dp(12), dp(10));
 
-        modeBadgeText.setText("Current Mode: Boss");
-        assignTaskBox.setVisibility(View.VISIBLE);
-        managerActionBox.setVisibility(View.GONE);
-        reassignTaskButton.setVisibility(View.VISIBLE);
-        attendanceHistoryText.setVisibility(View.VISIBLE);
+        new AlertDialog.Builder(this)
+                .setTitle("Complete Task")
+                .setMessage(task.title)
+                .setView(noteInput)
+                .setPositiveButton("Submit", (dialog, which) -> {
+                    String note = noteInput.getText().toString().trim();
 
-        statusText.setText("Boss View - Live sync active ✅");
-        renderDashboardSummary();
+                    if (note.isEmpty()) {
+                        note = "Completed";
+                    }
 
-        if (latestTasksSnapshot != null) {
-            renderTaskList(latestTasksSnapshot);
-        }
-    }
-
-    private void showManagerView() {
-        isBossView = false;
-
-        modeBadgeText.setText("Current Mode: Manager");
-        assignTaskBox.setVisibility(View.GONE);
-        managerActionBox.setVisibility(View.VISIBLE);
-        reassignTaskButton.setVisibility(View.GONE);
-        attendanceHistoryText.setVisibility(View.GONE);
-
-        statusText.setText("Manager View - Live sync active ✅");
-        renderDashboardSummary();
-
-        if (latestTasksSnapshot != null) {
-            renderTaskList(latestTasksSnapshot);
-        }
+                    completeTask(business, task, note);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void openDueDatePicker() {
-        Calendar calendar = Calendar.getInstance();
+        Calendar cal = selectedDueDate == null ? Calendar.getInstance() : selectedDueDate;
 
         DatePickerDialog dialog = new DatePickerDialog(
                 this,
                 (view, year, month, dayOfMonth) -> {
-                    String dateText = String.format(
-                            Locale.getDefault(),
-                            "%04d-%02d-%02d",
-                            year,
-                            month + 1,
-                            dayOfMonth
-                    );
+                    selectedDueDate = Calendar.getInstance();
+                    selectedDueDate.set(Calendar.YEAR, year);
+                    selectedDueDate.set(Calendar.MONTH, month);
+                    selectedDueDate.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                    selectedDueDate.set(Calendar.HOUR_OF_DAY, 0);
+                    selectedDueDate.set(Calendar.MINUTE, 0);
+                    selectedDueDate.set(Calendar.SECOND, 0);
+                    selectedDueDate.set(Calendar.MILLISECOND, 0);
 
-                    taskDueDateInput.setText(dateText);
+                    bossDueDateButton.setText("Due: " + formatDate(selectedDueDate.getTime()));
                 },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH),
+                cal.get(Calendar.DAY_OF_MONTH)
         );
 
         dialog.show();
     }
 
-    private void applyTaskFilter(String filter) {
-        taskFilter = filter;
-
-        if (latestTasksSnapshot != null) {
-            renderTaskList(latestTasksSnapshot);
+    private boolean isOverdue(WorkTask task) {
+        if ("Completed".equalsIgnoreCase(task.status)) {
+            return false;
         }
 
-        statusText.setText("Task filter applied: " + getTaskFilterLabel());
+        if (task.dueDateMillis <= 0) {
+            return false;
+        }
+
+        return task.dueDateMillis < startOfTodayMillis();
     }
 
-    private void startRealtimeListeners() {
-        stopRealtimeListeners();
+    private int statusColor(String status) {
+        if ("Completed".equalsIgnoreCase(status)) {
+            return GREEN;
+        }
 
-        companyListener = companyRef.addSnapshotListener((documentSnapshot, error) -> {
-            if (error != null) {
-                statusText.setText("Company live sync failed: " + error.getMessage());
-                return;
+        return ORANGE;
+    }
+
+    private int priorityColor(String priority) {
+        if ("High".equalsIgnoreCase(priority)) {
+            return RED;
+        }
+
+        if ("Medium".equalsIgnoreCase(priority)) {
+            return ORANGE;
+        }
+
+        return BLUE;
+    }
+
+    private void logout() {
+        getPrefs().edit()
+                .remove(KEY_ROLE)
+                .remove(KEY_BUSINESS_ID)
+                .apply();
+
+        showLoginScreen();
+    }
+
+    private void detachBusinessListeners() {
+        if (taskListener != null) {
+            taskListener.remove();
+            taskListener = null;
+        }
+
+        if (attendanceListener != null) {
+            attendanceListener.remove();
+            attendanceListener = null;
+        }
+
+        if (bossStatsTaskListener != null) {
+            bossStatsTaskListener.remove();
+            bossStatsTaskListener = null;
+        }
+
+        if (bossStatsAttendanceListener != null) {
+            bossStatsAttendanceListener.remove();
+            bossStatsAttendanceListener = null;
+        }
+
+        if (activityListener != null) {
+            activityListener.remove();
+            activityListener = null;
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        detachBusinessListeners();
+        super.onDestroy();
+    }
+
+    private BusinessInfo findBusinessById(String id) {
+        for (BusinessInfo business : businesses) {
+            if (business.businessId.equals(id)) {
+                return business;
             }
+        }
 
-            if (documentSnapshot != null && documentSnapshot.exists()) {
-                String businessName = documentSnapshot.getString("businessName");
+        return null;
+    }
 
-                if (businessName != null && !businessName.isEmpty()) {
-                    dashboardBusinessName = businessName;
-                    companyTitleText.setText(businessName);
+    private int findBusinessIndexById(String id) {
+        for (int i = 0; i < businesses.length; i++) {
+            if (businesses[i].businessId.equals(id)) {
+                return i;
+            }
+        }
+
+        return 0;
+    }
+
+    private BusinessInfo findBusinessByManagerPin(String pin) {
+        for (BusinessInfo business : businesses) {
+            if (business.managerPin.equals(pin)) {
+                return business;
+            }
+        }
+
+        return null;
+    }
+
+    private void setSpinnerItems(Spinner spinner, String[] items) {
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                this,
+                android.R.layout.simple_spinner_item,
+                items
+        );
+
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(adapter);
+    }
+
+    private void setupUiStyle() {
+        GradientDrawable bg = new GradientDrawable(
+                GradientDrawable.Orientation.TL_BR,
+                new int[]{
+                        Color.parseColor("#071326"),
+                        Color.parseColor("#0B1F3A"),
+                        Color.parseColor("#020617")
                 }
+        );
+        appBackground.setBackground(bg);
 
-                String savedTaskId = documentSnapshot.getString("currentTaskId");
+        setGlow(findViewById(R.id.glowTop), BLUE);
+        setGlow(findViewById(R.id.glowBottom), CYAN);
+        setGlow(findViewById(R.id.glowMiddle), WHITE);
 
-                if (savedTaskId != null && !savedTaskId.isEmpty()) {
-                    currentTaskId = savedTaskId;
-                } else {
-                    currentTaskId = "task_1";
-                }
+        int[] glassCards = new int[]{
+                R.id.loginCard,
+                R.id.loginInfoCard,
+                R.id.bossHeaderCard,
+                R.id.bossBusinessCard,
+                R.id.bossStatsCard,
+                R.id.bossAssignCard,
+                R.id.bossFilterCard,
+                R.id.bossTasksCard,
+                R.id.bossActivityCard,
+                R.id.managerHeaderCard,
+                R.id.managerAttendanceCard,
+                R.id.managerStatsCard,
+                R.id.managerFilterCard,
+                R.id.managerTasksCard
+        };
 
-                currentTaskRef = companyRef.collection("tasks").document(currentTaskId);
+        for (int id : glassCards) {
+            View view = findViewById(id);
+            view.setBackground(glassDrawable(dp(22)));
+            view.setElevation(dp(8));
+        }
 
-                if (latestTasksSnapshot != null) {
-                    renderCurrentTaskFromSnapshot(latestTasksSnapshot);
-                } else {
-                    loadCurrentTaskOnce();
-                }
+        int[] statCards = new int[]{
+                R.id.bossCheckedInStatCard,
+                R.id.bossPendingStatCard,
+                R.id.bossCompletedStatCard,
+                R.id.bossHighStatCard,
+                R.id.managerPendingStatCard,
+                R.id.managerCompletedStatCard
+        };
 
-                renderDashboardSummary();
+        for (int id : statCards) {
+            View view = findViewById(id);
+            view.setBackground(glassStroke(Color.argb(45, 255, 255, 255), dp(18), Color.argb(80, 255, 255, 255)));
+            view.setElevation(dp(5));
+        }
 
-                if (appContentBox.getVisibility() == View.VISIBLE) {
-                    statusText.setText("Live sync active ✅");
-                }
-            }
-        });
+        setEditStyle(loginPinInput);
+        setEditStyle(bossTaskTitleInput);
+        setEditStyle(bossTaskDetailsInput);
 
-        managerListener = managerRef.addSnapshotListener((documentSnapshot, error) -> {
-            if (error != null) {
-                managerCardText.setText("Manager live sync failed:\n" + error.getMessage());
-                return;
-            }
+        bossLoginButton.setBackground(rounded(BLUE, dp(14)));
+        managerLoginButton.setBackground(rounded(PURPLE, dp(14)));
+        bossLogoutButton.setBackground(glassStroke(Color.argb(28, 255, 255, 255), dp(20), Color.argb(110, 255, 255, 255)));
+        managerLogoutButton.setBackground(glassStroke(Color.argb(28, 255, 255, 255), dp(20), Color.argb(110, 255, 255, 255)));
 
-            if (documentSnapshot != null && documentSnapshot.exists()) {
-                String name = documentSnapshot.getString("name");
-                String email = documentSnapshot.getString("email");
-                Boolean checkedIn = documentSnapshot.getBoolean("checkedIn");
+        bossDueDateButton.setBackground(glassStroke(Color.argb(32, 255, 255, 255), dp(14), Color.argb(120, 255, 255, 255)));
+        bossAssignTaskButton.setBackground(rounded(GREEN, dp(14)));
 
-                dashboardManagerName = safeText(name);
-                dashboardManagerCheckedIn = Boolean.TRUE.equals(checkedIn);
-
-                String attendanceStatus = dashboardManagerCheckedIn
-                        ? "Checked In ✅"
-                        : "Not Checked In ❌";
-
-                String text =
-                        "Manager Status\n\n" +
-                                "Name: " + safeText(name) + "\n" +
-                                "Email: " + safeText(email) + "\n" +
-                                "Attendance: " + attendanceStatus;
-
-                managerCardText.setText(text);
-                renderDashboardSummary();
-            } else {
-                managerCardText.setText("Manager document not found.");
-            }
-        });
-
-        attendanceListener = attendanceRef.addSnapshotListener((documentSnapshot, error) -> {
-            if (error != null) {
-                attendanceCardText.setText("Attendance live sync failed:\n" + error.getMessage());
-                return;
-            }
-
-            if (documentSnapshot != null && documentSnapshot.exists()) {
-                String date = documentSnapshot.getString("date");
-                String status = documentSnapshot.getString("status");
-                Boolean checkedIn = documentSnapshot.getBoolean("checkedIn");
-
-                Timestamp checkInAt = documentSnapshot.getTimestamp("checkInAt");
-                Timestamp checkOutAt = documentSnapshot.getTimestamp("checkOutAt");
-
-                String checkInText = formatTimestamp(checkInAt);
-                String checkOutText = formatTimestamp(checkOutAt);
-
-                dashboardTodayAttendanceStatus = safeText(status);
-                dashboardCheckInTime = checkInText;
-                dashboardCheckOutTime = checkOutText;
-
-                String currentState = Boolean.TRUE.equals(checkedIn)
-                        ? "Currently Checked In ✅"
-                        : "Currently Checked Out / Not Active ❌";
-
-                String text =
-                        "Today's Attendance\n\n" +
-                                "Date: " + safeText(date) + "\n" +
-                                "Status: " + safeText(status) + "\n" +
-                                "Current State: " + currentState + "\n" +
-                                "Check In: " + checkInText + "\n" +
-                                "Check Out: " + checkOutText + "\n" +
-                                "Doc ID: " + getTodayAttendanceId();
-
-                attendanceCardText.setText(text);
-                renderDashboardSummary();
-            } else {
-                dashboardTodayAttendanceStatus = "not_started";
-                dashboardCheckInTime = "-";
-                dashboardCheckOutTime = "-";
-
-                attendanceCardText.setText(
-                        "Today's Attendance\n\n" +
-                                "No attendance record yet for today.\n" +
-                                "Manager can press Check In to create it.\n\n" +
-                                "Expected Doc ID: " + getTodayAttendanceId()
-                );
-
-                renderDashboardSummary();
-            }
-        });
-
-        attendanceHistoryListener = companyRef.collection("attendance")
-                .addSnapshotListener((queryDocumentSnapshots, error) -> {
-                    if (error != null) {
-                        attendanceHistoryText.setText("Attendance history sync failed:\n" + error.getMessage());
-                        return;
-                    }
-
-                    if (queryDocumentSnapshots != null) {
-                        renderAttendanceHistory(queryDocumentSnapshots);
-                    }
-                });
-
-        tasksListener = companyRef.collection("tasks")
-                .addSnapshotListener((queryDocumentSnapshots, error) -> {
-                    if (error != null) {
-                        taskSummaryText.setText("Task live sync failed:\n" + error.getMessage());
-                        return;
-                    }
-
-                    if (queryDocumentSnapshots != null) {
-                        latestTasksSnapshot = queryDocumentSnapshots;
-                        renderTaskList(queryDocumentSnapshots);
-                        renderCurrentTaskFromSnapshot(queryDocumentSnapshots);
-
-                        if (appContentBox.getVisibility() == View.VISIBLE) {
-                            statusText.setText("Live task update received ✅");
-                        }
-                    }
-                });
+        managerCheckInButton.setBackground(rounded(GREEN, dp(14)));
+        managerCheckOutButton.setBackground(rounded(RED, dp(14)));
     }
 
-    private void stopRealtimeListeners() {
-        if (companyListener != null) companyListener.remove();
-        if (managerListener != null) managerListener.remove();
-        if (attendanceListener != null) attendanceListener.remove();
-        if (attendanceHistoryListener != null) attendanceHistoryListener.remove();
-        if (tasksListener != null) tasksListener.remove();
-
-        companyListener = null;
-        managerListener = null;
-        attendanceListener = null;
-        attendanceHistoryListener = null;
-        tasksListener = null;
+    private void setGlow(View view, int color) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setShape(GradientDrawable.RECTANGLE);
+        drawable.setColor(color);
+        drawable.setCornerRadius(dp(300));
+        view.setBackground(drawable);
     }
 
-    private void renderDashboardSummary() {
-        String managerLiveText = dashboardManagerCheckedIn
-                ? "Active / Checked In ✅"
-                : "Not Active ❌";
-
-        String viewText = isBossView ? "Boss Dashboard" : "Manager Dashboard";
-
-        String summary =
-                viewText + "\n\n" +
-                        "Business: " + safeText(dashboardBusinessName) + "\n" +
-                        "Manager: " + safeText(dashboardManagerName) + "\n" +
-                        "Manager Status: " + managerLiveText + "\n\n" +
-                        "Today's Attendance: " + safeText(dashboardTodayAttendanceStatus) + "\n" +
-                        "Check In: " + safeText(dashboardCheckInTime) + "\n" +
-                        "Check Out: " + safeText(dashboardCheckOutTime) + "\n\n" +
-                        "Task Overview\n" +
-                        "Pending: " + dashboardPendingTasks + "\n" +
-                        "Completed: " + dashboardCompletedTasks + "\n" +
-                        "Total: " + dashboardTotalTasks + "\n" +
-                        "Filter: " + getTaskFilterLabel();
-
-        dashboardSummaryText.setText(summary);
+    private void setEditStyle(EditText editText) {
+        editText.setBackground(glassStroke(Color.argb(35, 255, 255, 255), dp(14), Color.argb(90, 255, 255, 255)));
+        editText.setTextColor(WHITE);
+        editText.setHintTextColor(MUTED_LIGHT);
     }
 
-    private void renderAttendanceHistory(QuerySnapshot queryDocumentSnapshots) {
-        if (queryDocumentSnapshots.isEmpty()) {
-            attendanceHistoryText.setText("Attendance History\n\nNo attendance records found.");
-            return;
-        }
-
-        StringBuilder builder = new StringBuilder();
-        builder.append("Attendance History - Manager 1\n\n");
-
-        int count = 0;
-
-        for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-            String userId = document.getString("userId");
-
-            if (!managerId.equals(userId)) {
-                continue;
-            }
-
-            count++;
-
-            String date = document.getString("date");
-            String status = document.getString("status");
-            Boolean checkedIn = document.getBoolean("checkedIn");
-            Timestamp checkInAt = document.getTimestamp("checkInAt");
-            Timestamp checkOutAt = document.getTimestamp("checkOutAt");
-
-            String state = Boolean.TRUE.equals(checkedIn)
-                    ? "Active / Checked In"
-                    : "Inactive / Checked Out";
-
-            builder.append(count)
-                    .append(". Date: ")
-                    .append(safeText(date))
-                    .append("\nStatus: ")
-                    .append(safeText(status))
-                    .append("\nState: ")
-                    .append(state)
-                    .append("\nCheck In: ")
-                    .append(formatTimestamp(checkInAt))
-                    .append("\nCheck Out: ")
-                    .append(formatTimestamp(checkOutAt))
-                    .append("\nDoc ID: ")
-                    .append(document.getId())
-                    .append("\n\n");
-        }
-
-        if (count == 0) {
-            attendanceHistoryText.setText("Attendance History\n\nNo attendance records found for Manager 1.");
-        } else {
-            attendanceHistoryText.setText(builder.toString());
-        }
-    }
-
-    private void loadCurrentTaskOnce() {
-        if (currentTaskRef == null) {
-            currentTaskText.setText("Current Task\n\nNo current task selected.");
-            return;
-        }
-
-        currentTaskRef.get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        setCurrentTaskText(
-                                currentTaskId,
-                                documentSnapshot.getString("title"),
-                                documentSnapshot.getString("description"),
-                                documentSnapshot.getString("status"),
-                                documentSnapshot.getString("assignedTo"),
-                                documentSnapshot.getString("completionNote"),
-                                documentSnapshot.getString("priority"),
-                                documentSnapshot.getString("dueDateText"),
-                                documentSnapshot.getString("attachmentFileName"),
-                                documentSnapshot.getString("attachmentUrl")
-                        );
-                    } else {
-                        currentTaskText.setText("Current Task\n\nCurrent task document not found.");
-                    }
-                })
-                .addOnFailureListener(e -> currentTaskText.setText("Current task load failed:\n" + e.getMessage()));
-    }
-
-    private void renderCurrentTaskFromSnapshot(QuerySnapshot queryDocumentSnapshots) {
-        boolean found = false;
-
-        for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-            String taskId = document.getId();
-
-            if (taskId.equals(currentTaskId)) {
-                setCurrentTaskText(
-                        taskId,
-                        document.getString("title"),
-                        document.getString("description"),
-                        document.getString("status"),
-                        document.getString("assignedTo"),
-                        document.getString("completionNote"),
-                        document.getString("priority"),
-                        document.getString("dueDateText"),
-                        document.getString("attachmentFileName"),
-                        document.getString("attachmentUrl")
-                );
-
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            currentTaskText.setText("Current Task\n\nCurrent task not found in live task list.");
-        }
-    }
-
-    private void setCurrentTaskText(
-            String taskId,
-            String title,
-            String description,
-            String status,
-            String assignedTo,
-            String completionNote,
-            String priority,
-            String dueDateText,
-            String attachmentFileName,
-            String attachmentUrl
-    ) {
-        String noteText = safeText(completionNote);
-        if ("-".equals(noteText)) noteText = "No completion note yet";
-
-        String attachmentText = safeText(attachmentFileName);
-        if (!"-".equals(safeText(attachmentUrl))) {
-            attachmentText = attachmentText + "\nAttachment URL: " + attachmentUrl;
-        }
-
-        String text =
-                "Current Task\n\n" +
-                        "Task ID: " + taskId + "\n" +
-                        "Title: " + safeText(title) + "\n" +
-                        "Description: " + safeText(description) + "\n" +
-                        "Priority: " + safeText(priority) + "\n" +
-                        "Due: " + safeText(dueDateText) + "\n" +
-                        "Assigned To: " + safeText(assignedTo) + "\n" +
-                        "Status: " + safeText(status) + "\n" +
-                        "Note: " + noteText + "\n" +
-                        "Attachment: " + attachmentText;
-
-        currentTaskText.setText(text);
-    }
-
-    private void renderTaskList(QuerySnapshot queryDocumentSnapshots) {
-        taskListContainer.removeAllViews();
-
-        if (queryDocumentSnapshots.isEmpty()) {
-            dashboardPendingTasks = 0;
-            dashboardCompletedTasks = 0;
-            dashboardTotalTasks = 0;
-            renderDashboardSummary();
-            taskSummaryText.setText("Task Summary\n\nNo tasks found yet.");
-            return;
-        }
-
-        int pendingCount = 0;
-        int completedCount = 0;
-        int totalForManager = 0;
-        int visibleCount = 0;
-
-        for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-            String taskId = document.getId();
-            String title = document.getString("title");
-            String description = document.getString("description");
-            String status = document.getString("status");
-            String assignedTo = document.getString("assignedTo");
-            String completionNote = document.getString("completionNote");
-            String priority = document.getString("priority");
-            String dueDateText = document.getString("dueDateText");
-            String attachmentFileName = document.getString("attachmentFileName");
-            String attachmentUrl = document.getString("attachmentUrl");
-
-            if (!managerId.equals(assignedTo)) {
-                continue;
-            }
-
-            totalForManager++;
-
-            if ("completed".equals(status)) {
-                completedCount++;
-            } else {
-                pendingCount++;
-            }
-
-            if (!shouldShowTask(status)) {
-                continue;
-            }
-
-            visibleCount++;
-            addTaskCard(
-                    taskId,
-                    title,
-                    description,
-                    status,
-                    completionNote,
-                    priority,
-                    dueDateText,
-                    attachmentFileName,
-                    attachmentUrl
-            );
-        }
-
-        dashboardPendingTasks = pendingCount;
-        dashboardCompletedTasks = completedCount;
-        dashboardTotalTasks = totalForManager;
-        renderDashboardSummary();
-
-        String summary =
-                "Task Summary\n\n" +
-                        "Pending: " + pendingCount + "\n" +
-                        "Completed: " + completedCount + "\n" +
-                        "Total: " + totalForManager + "\n" +
-                        "Showing: " + getTaskFilterLabel() + "\n" +
-                        "Visible in list: " + visibleCount;
-
-        taskSummaryText.setText(summary);
-
-        if (visibleCount == 0) {
-            TextView emptyText = new TextView(this);
-            emptyText.setText("No tasks match this filter.");
-            emptyText.setTextSize(16);
-            emptyText.setTextColor(Color.parseColor("#222222"));
-            emptyText.setBackgroundColor(Color.WHITE);
-            emptyText.setPadding(dp(16), dp(16), dp(16), dp(16));
-            taskListContainer.addView(emptyText);
-        }
-    }
-
-    private void addTaskCard(
-            String taskId,
-            String title,
-            String description,
-            String status,
-            String completionNote,
-            String priority,
-            String dueDateText,
-            String attachmentFileName,
-            String attachmentUrl
-    ) {
+    private LinearLayout innerGlassCard() {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackgroundColor(Color.WHITE);
-        card.setPadding(dp(16), dp(16), dp(16), dp(16));
+        card.setPadding(dp(14), dp(14), dp(14), dp(14));
+        card.setBackground(glassStroke(Color.argb(45, 255, 255, 255), dp(18), Color.argb(80, 255, 255, 255)));
+        card.setElevation(dp(4));
 
-        LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
         );
-        cardParams.setMargins(0, 0, 0, dp(14));
-        card.setLayoutParams(cardParams);
+        lp.setMargins(0, 0, 0, dp(12));
+        card.setLayoutParams(lp);
 
-        TextView taskText = new TextView(this);
-        taskText.setTextSize(16);
-        taskText.setTextColor(Color.parseColor("#222222"));
-        taskText.setLineSpacing(dp(4), 1.0f);
-
-        String noteText = safeText(completionNote);
-        if ("-".equals(noteText)) noteText = "No completion note yet";
-
-        String attachmentText = safeText(attachmentFileName);
-        if (!"-".equals(safeText(attachmentUrl))) {
-            attachmentText = attachmentText + "\nAttachment URL: " + attachmentUrl;
-        }
-
-        String selectedFileText = "";
-        if (selectedAttachmentNames.containsKey(taskId)) {
-            selectedFileText = "\nSelected file: " + selectedAttachmentNames.get(taskId);
-        }
-
-        String displayText =
-                "Task\n\n" +
-                        "Title: " + safeText(title) + "\n" +
-                        "Description: " + safeText(description) + "\n" +
-                        "Priority: " + safeText(priority) + "\n" +
-                        "Due: " + safeText(dueDateText) + "\n" +
-                        "Status: " + safeText(status) + "\n" +
-                        "ID: " + taskId + "\n" +
-                        "Note: " + noteText + "\n" +
-                        "Attachment: " + attachmentText +
-                        selectedFileText;
-
-        taskText.setText(displayText);
-        card.addView(taskText);
-
-        if (!"completed".equals(status)) {
-            if (!isBossView) {
-                EditText noteInput = new EditText(this);
-                noteInput.setHint("Completion note for this task");
-                noteInput.setMinLines(2);
-                noteInput.setBackgroundColor(Color.parseColor("#F5F7FA"));
-                noteInput.setPadding(dp(12), dp(12), dp(12), dp(12));
-
-                LinearLayout.LayoutParams noteParams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                );
-                noteParams.setMargins(0, dp(12), 0, 0);
-                noteInput.setLayoutParams(noteParams);
-                card.addView(noteInput);
-
-                Button attachButton = new Button(this);
-                attachButton.setText("Attach File / Receipt");
-
-                LinearLayout.LayoutParams attachParams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                );
-                attachParams.setMargins(0, dp(10), 0, 0);
-                attachButton.setLayoutParams(attachParams);
-
-                attachButton.setOnClickListener(v -> chooseAttachmentForTask(taskId));
-                card.addView(attachButton);
-
-                Button completeButton = new Button(this);
-                completeButton.setText("Manager Complete This Task");
-
-                LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                );
-                buttonParams.setMargins(0, dp(10), 0, 0);
-                completeButton.setLayoutParams(buttonParams);
-
-                completeButton.setOnClickListener(v -> {
-                    String note = noteInput.getText().toString().trim();
-                    completeTaskById(taskId, note);
-                });
-
-                card.addView(completeButton);
-            } else {
-                Button completeButton = new Button(this);
-                completeButton.setText("Boss Mark This Task Completed");
-
-                LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                );
-                buttonParams.setMargins(0, dp(12), 0, 0);
-                completeButton.setLayoutParams(buttonParams);
-
-                completeButton.setOnClickListener(v -> completeTaskById(taskId, "Marked completed by Boss from Android app"));
-                card.addView(completeButton);
-            }
-        }
-
-        if (isBossView && "completed".equals(status)) {
-            Button pendingButton = new Button(this);
-            pendingButton.setText("Boss Reopen This Task");
-
-            LinearLayout.LayoutParams buttonParams = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-            );
-            buttonParams.setMargins(0, dp(12), 0, 0);
-            pendingButton.setLayoutParams(buttonParams);
-
-            pendingButton.setOnClickListener(v -> reopenTaskById(taskId));
-            card.addView(pendingButton);
-        }
-
-        taskListContainer.addView(card);
+        return card;
     }
 
-    private void chooseAttachmentForTask(String taskId) {
-        pendingAttachmentTaskId = taskId;
-
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType("*/*");
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-
-        filePickerLauncher.launch(intent);
+    private LinearLayout horizontalRow() {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        row.setLayoutParams(new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        ));
+        return row;
     }
 
-    private void bossAssignNewTask() {
-        String title = taskTitleInput.getText().toString().trim();
-        String description = taskDescriptionInput.getText().toString().trim();
-        String priority = taskPrioritySpinner.getSelectedItem().toString();
-        String dueDateText = taskDueDateInput.getText().toString().trim();
+    private TextView chip(String text, int color) {
+        TextView chip = text(text, 12, WHITE, Typeface.BOLD);
+        chip.setGravity(Gravity.CENTER);
+        chip.setPadding(dp(10), dp(5), dp(10), dp(5));
+        chip.setBackground(rounded(color, dp(30)));
 
-        if (title.isEmpty()) {
-            statusText.setText("Enter a task title first.");
-            return;
-        }
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+        );
+        lp.setMargins(0, 0, dp(6), dp(6));
+        chip.setLayoutParams(lp);
 
-        if (description.isEmpty()) {
-            description = "No description added";
-        }
-
-        if (dueDateText.isEmpty()) {
-            dueDateText = "No due date set";
-        }
-
-        statusText.setText("Assigning new task...");
-
-        String newTaskId = "task_" + System.currentTimeMillis();
-
-        Map<String, Object> taskData = new HashMap<>();
-        taskData.put("title", title);
-        taskData.put("description", description);
-        taskData.put("priority", priority);
-        taskData.put("dueDateText", dueDateText);
-        taskData.put("assignedTo", managerId);
-        taskData.put("assignedBy", "boss_1");
-        taskData.put("status", "pending");
-        taskData.put("createdAt", FieldValue.serverTimestamp());
-
-        DocumentReference newTaskRef = companyRef.collection("tasks").document(newTaskId);
-
-        newTaskRef.set(taskData)
-                .addOnSuccessListener(unused -> {
-                    Map<String, Object> companyUpdates = new HashMap<>();
-                    companyUpdates.put("currentTaskId", newTaskId);
-                    companyUpdates.put("updatedAt", FieldValue.serverTimestamp());
-
-                    companyRef.update(companyUpdates)
-                            .addOnSuccessListener(unused2 -> {
-                                currentTaskId = newTaskId;
-                                currentTaskRef = newTaskRef;
-
-                                taskTitleInput.setText("");
-                                taskDescriptionInput.setText("");
-                                taskPrioritySpinner.setSelection(0);
-                                taskDueDateInput.setText("");
-
-                                statusText.setText("New task assigned to Manager 1 ✅");
-                            })
-                            .addOnFailureListener(e -> statusText.setText("Company update failed: " + e.getMessage()));
-                })
-                .addOnFailureListener(e -> statusText.setText("Task assign failed: " + e.getMessage()));
+        return chip;
     }
 
-    private void managerCheckIn() {
-        statusText.setText("Checking in...");
-
-        Map<String, Object> managerUpdates = new HashMap<>();
-        managerUpdates.put("checkedIn", true);
-        managerUpdates.put("lastCheckInAt", FieldValue.serverTimestamp());
-
-        managerRef.update(managerUpdates)
-                .addOnSuccessListener(unused -> {
-                    Map<String, Object> attendanceData = new HashMap<>();
-                    attendanceData.put("userId", managerId);
-                    attendanceData.put("date", getTodayDateText());
-                    attendanceData.put("checkedIn", true);
-                    attendanceData.put("status", "checked_in");
-                    attendanceData.put("checkInAt", FieldValue.serverTimestamp());
-                    attendanceData.put("updatedAt", FieldValue.serverTimestamp());
-
-                    attendanceRef.set(attendanceData, SetOptions.merge())
-                            .addOnSuccessListener(unused2 -> statusText.setText("Manager checked in ✅"))
-                            .addOnFailureListener(e -> statusText.setText("Attendance check-in failed: " + e.getMessage()));
-                })
-                .addOnFailureListener(e -> statusText.setText("Manager check-in failed: " + e.getMessage()));
+    private Button compactFullButton(String label, int color) {
+        Button button = new Button(this);
+        button.setText(label);
+        button.setAllCaps(false);
+        button.setTextColor(WHITE);
+        button.setTextSize(13);
+        button.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        button.setBackground(rounded(color, dp(14)));
+        return button;
     }
 
-    private void managerCheckOut() {
-        statusText.setText("Checking out...");
-
-        Map<String, Object> managerUpdates = new HashMap<>();
-        managerUpdates.put("checkedIn", false);
-        managerUpdates.put("lastCheckOutAt", FieldValue.serverTimestamp());
-
-        managerRef.update(managerUpdates)
-                .addOnSuccessListener(unused -> {
-                    Map<String, Object> attendanceData = new HashMap<>();
-                    attendanceData.put("userId", managerId);
-                    attendanceData.put("date", getTodayDateText());
-                    attendanceData.put("checkedIn", false);
-                    attendanceData.put("status", "checked_out");
-                    attendanceData.put("checkOutAt", FieldValue.serverTimestamp());
-                    attendanceData.put("updatedAt", FieldValue.serverTimestamp());
-
-                    attendanceRef.set(attendanceData, SetOptions.merge())
-                            .addOnSuccessListener(unused2 -> statusText.setText("Manager checked out ✅"))
-                            .addOnFailureListener(e -> statusText.setText("Attendance check-out failed: " + e.getMessage()));
-                })
-                .addOnFailureListener(e -> statusText.setText("Manager check-out failed: " + e.getMessage()));
+    private TextView infoText(String message) {
+        TextView tv = text(message, 14, MUTED_LIGHT, Typeface.NORMAL);
+        tv.setPadding(0, dp(8), 0, dp(8));
+        return tv;
     }
 
-    private void completeTaskById(String taskId, String note) {
-        statusText.setText("Completing task...");
-
-        DocumentReference taskRef = companyRef.collection("tasks").document(taskId);
-
-        String finalNote = note;
-        if (finalNote == null || finalNote.trim().isEmpty()) {
-            finalNote = isBossView
-                    ? "Marked completed by Boss from Android app"
-                    : "Completed by Manager 1 from Android app";
-        }
-
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("status", "completed");
-        updates.put("completedAt", FieldValue.serverTimestamp());
-        updates.put("completionNote", finalNote);
-
-        Uri attachmentUri = selectedAttachmentUris.get(taskId);
-
-        if (!isBossView && attachmentUri != null) {
-            uploadAttachmentThenComplete(taskId, taskRef, updates, attachmentUri);
-        } else {
-            completeTaskWithUpdates(taskId, taskRef, updates);
-        }
+    private TextView errorText(String message) {
+        TextView tv = text(message, 14, Color.parseColor("#FCA5A5"), Typeface.NORMAL);
+        tv.setPadding(0, dp(8), 0, dp(8));
+        return tv;
     }
 
-    private void uploadAttachmentThenComplete(
-            String taskId,
-            DocumentReference taskRef,
-            Map<String, Object> updates,
-            Uri attachmentUri
-    ) {
-        String fileName = selectedAttachmentNames.containsKey(taskId)
-                ? selectedAttachmentNames.get(taskId)
-                : "attachment";
-
-        String safeFileName = sanitizeFileName(fileName);
-        String storagePath = "companies/global_plaza/tasks/" + taskId + "/attachments/" +
-                System.currentTimeMillis() + "_" + safeFileName;
-
-        StorageReference fileRef = storage.getReference().child(storagePath);
-
-        statusText.setText("Uploading attachment...");
-
-        fileRef.putFile(attachmentUri)
-                .addOnSuccessListener(taskSnapshot -> fileRef.getDownloadUrl()
-                        .addOnSuccessListener(downloadUri -> {
-                            updates.put("attachmentFileName", fileName);
-                            updates.put("attachmentPath", storagePath);
-                            updates.put("attachmentUrl", downloadUri.toString());
-                            updates.put("attachmentUploadedAt", FieldValue.serverTimestamp());
-
-                            completeTaskWithUpdates(taskId, taskRef, updates);
-                        })
-                        .addOnFailureListener(e -> statusText.setText("Download URL failed: " + e.getMessage())))
-                .addOnFailureListener(e -> statusText.setText("Attachment upload failed: " + e.getMessage()));
+    private TextView text(String value, int size, int color, int style) {
+        TextView tv = new TextView(this);
+        tv.setText(value);
+        tv.setTextSize(size);
+        tv.setTextColor(color);
+        tv.setTypeface(Typeface.DEFAULT, style);
+        tv.setLineSpacing(2, 1.0f);
+        return tv;
     }
 
-    private void completeTaskWithUpdates(String taskId, DocumentReference taskRef, Map<String, Object> updates) {
-        taskRef.update(updates)
-                .addOnSuccessListener(unused -> {
-                    selectedAttachmentUris.remove(taskId);
-                    selectedAttachmentNames.remove(taskId);
-                    statusText.setText("Task completed ✅ Live sync will update list.");
-                })
-                .addOnFailureListener(e -> statusText.setText("Task completion failed: " + e.getMessage()));
-    }
-
-    private void reopenTaskById(String taskId) {
-        statusText.setText("Reopening task...");
-
-        DocumentReference taskRef = companyRef.collection("tasks").document(taskId);
-
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("status", "pending");
-        updates.put("completionNote", FieldValue.delete());
-        updates.put("completedAt", FieldValue.delete());
-        updates.put("updatedAt", FieldValue.serverTimestamp());
-
-        taskRef.update(updates)
-                .addOnSuccessListener(unused -> statusText.setText("Task reopened ✅ Live sync will update list."))
-                .addOnFailureListener(e -> statusText.setText("Task reopen failed: " + e.getMessage()));
-    }
-
-    private void bossSetCurrentTaskPending() {
-        if (currentTaskRef == null) {
-            statusText.setText("No current task found.");
-            return;
-        }
-
-        Map<String, Object> updates = new HashMap<>();
-        updates.put("status", "pending");
-        updates.put("assignedTo", managerId);
-        updates.put("assignedBy", "boss_1");
-        updates.put("completionNote", FieldValue.delete());
-        updates.put("completedAt", FieldValue.delete());
-        updates.put("updatedAt", FieldValue.serverTimestamp());
-
-        currentTaskRef.update(updates)
-                .addOnSuccessListener(unused -> statusText.setText("Boss set current task to pending ✅"))
-                .addOnFailureListener(e -> statusText.setText("Boss update failed: " + e.getMessage()));
-    }
-
-    private boolean shouldShowTask(String status) {
-        if ("pending".equals(taskFilter)) {
-            return !"completed".equals(status);
-        }
-
-        if ("completed".equals(taskFilter)) {
-            return "completed".equals(status);
-        }
-
-        return true;
-    }
-
-    private String getTaskFilterLabel() {
-        if ("pending".equals(taskFilter)) return "Pending only";
-        if ("completed".equals(taskFilter)) return "Completed only";
-        return "All tasks";
-    }
-
-    private String getTodayAttendanceId() {
-        return "attendance_" + getTodayIdText() + "_" + managerId;
-    }
-
-    private String getTodayIdText() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd", Locale.getDefault());
-        return sdf.format(new Date());
-    }
-
-    private String getTodayDateText() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-        return sdf.format(new Date());
-    }
-
-    private String formatTimestamp(Timestamp timestamp) {
-        if (timestamp == null) return "-";
-
-        SimpleDateFormat sdf = new SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault());
-        return sdf.format(timestamp.toDate());
-    }
-
-    private String getFileNameFromUri(Uri uri) {
-        String result = "attachment";
-
-        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-
-        if (cursor != null) {
-            try {
-                int nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME);
-
-                if (nameIndex >= 0 && cursor.moveToFirst()) {
-                    result = cursor.getString(nameIndex);
+    private GradientDrawable glassDrawable(int radius) {
+        GradientDrawable drawable = new GradientDrawable(
+                GradientDrawable.Orientation.TOP_BOTTOM,
+                new int[]{
+                        Color.argb(65, 255, 255, 255),
+                        Color.argb(24, 255, 255, 255)
                 }
-            } finally {
-                cursor.close();
-            }
-        }
-
-        return result;
+        );
+        drawable.setCornerRadius(radius);
+        drawable.setStroke(dp(1), Color.argb(85, 255, 255, 255));
+        return drawable;
     }
 
-    private String sanitizeFileName(String fileName) {
-        if (fileName == null || fileName.trim().isEmpty()) {
-            return "attachment";
-        }
-
-        return fileName.replaceAll("[^a-zA-Z0-9._-]", "_");
+    private GradientDrawable glassStroke(int color, int radius, int strokeColor) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(color);
+        drawable.setCornerRadius(radius);
+        drawable.setStroke(dp(1), strokeColor);
+        return drawable;
     }
 
-    private String safeText(String value) {
-        if (value == null || value.isEmpty()) return "-";
-        return value;
+    private GradientDrawable rounded(int color, int radius) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(color);
+        drawable.setCornerRadius(radius);
+        return drawable;
     }
 
     private int dp(int value) {
-        return (int) (value * getResources().getDisplayMetrics().density);
+        return (int) (value * getResources().getDisplayMetrics().density + 0.5f);
+    }
+
+    private SharedPreferences getPrefs() {
+        return getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+    }
+
+    private void hideKeyboard(View view) {
+        try {
+            InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+
+            if (imm != null) {
+                imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void toast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private String todayKey() {
+        return new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+    }
+
+    private String readableDate() {
+        return new SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault()).format(new Date());
+    }
+
+    private String readableTime() {
+        return new SimpleDateFormat("hh:mm a", Locale.getDefault()).format(new Date());
+    }
+
+    private String readableDateTime() {
+        return new SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(new Date());
+    }
+
+    private String formatDate(Date date) {
+        return new SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(date);
+    }
+
+    private long startOfTodayMillis() {
+        Calendar calendar = Calendar.getInstance();
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTimeInMillis();
+    }
+
+    private static String safeString(DocumentSnapshot doc, String key, String fallback) {
+        Object value = doc.get(key);
+
+        if (value == null) {
+            return fallback;
+        }
+
+        return String.valueOf(value);
+    }
+
+    private static long safeLong(DocumentSnapshot doc, String key, long fallback) {
+        Object value = doc.get(key);
+
+        if (value instanceof Long) {
+            return (Long) value;
+        }
+
+        if (value instanceof Integer) {
+            return ((Integer) value).longValue();
+        }
+
+        if (value instanceof Double) {
+            return ((Double) value).longValue();
+        }
+
+        return fallback;
+    }
+
+    private static class BusinessInfo {
+        String businessId;
+        String businessName;
+        String managerId;
+        String managerName;
+        String managerPin;
+
+        BusinessInfo(String businessId, String businessName, String managerId, String managerName, String managerPin) {
+            this.businessId = businessId;
+            this.businessName = businessName;
+            this.managerId = managerId;
+            this.managerName = managerName;
+            this.managerPin = managerPin;
+        }
+    }
+
+    private static class WorkTask {
+        String id;
+        String title;
+        String description;
+        String assignedName;
+        String priority;
+        String status;
+        String dueDate;
+        String completionNote;
+        String completedAtText;
+        long dueDateMillis;
+        long createdAtMillis;
+
+        static WorkTask from(DocumentSnapshot doc) {
+            WorkTask task = new WorkTask();
+
+            task.id = doc.getId();
+            task.title = safeString(doc, "title", "Untitled Task");
+            task.description = safeString(doc, "description", "");
+            task.assignedName = safeString(doc, "assignedName", "Manager");
+            task.priority = safeString(doc, "priority", "Medium");
+            task.status = safeString(doc, "status", "Pending");
+            task.dueDate = safeString(doc, "dueDate", "");
+            task.completionNote = safeString(doc, "completionNote", "");
+            task.dueDateMillis = safeLong(doc, "dueDateMillis", 0);
+            task.createdAtMillis = safeLong(doc, "createdAtMillis", 0);
+
+            Object completedAt = doc.get("completedAt");
+
+            if (completedAt instanceof Timestamp) {
+                Date date = ((Timestamp) completedAt).toDate();
+                task.completedAtText = new SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(date);
+            } else {
+                task.completedAtText = "";
+            }
+
+            return task;
+        }
     }
 }

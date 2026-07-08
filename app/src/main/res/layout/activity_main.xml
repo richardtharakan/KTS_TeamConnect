@@ -1,391 +1,885 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/appBackground"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#EEF2F7">
+    android:background="#071326">
 
-    <LinearLayout
+    <View
+        android:id="@+id/glowTop"
+        android:layout_width="280dp"
+        android:layout_height="280dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="-95dp"
+        android:layout_marginEnd="-85dp"
+        android:alpha="0.35"
+        android:background="#2563EB" />
+
+    <View
+        android:id="@+id/glowBottom"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="-110dp"
+        android:layout_marginBottom="-105dp"
+        android:alpha="0.25"
+        android:background="#14B8A6" />
+
+    <View
+        android:id="@+id/glowMiddle"
+        android:layout_width="190dp"
+        android:layout_height="190dp"
+        android:layout_gravity="center"
+        android:alpha="0.10"
+        android:background="#FFFFFF" />
+
+    <ScrollView
+        android:id="@+id/mainScroll"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true">
 
         <LinearLayout
-            android:id="@+id/loginBox"
+            android:id="@+id/mainRoot"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:background="#FFFFFF"
-            android:padding="22dp"
-            android:layout_marginTop="40dp"
-            android:layout_marginBottom="16dp">
+            android:paddingStart="16dp"
+            android:paddingTop="18dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="28dp">
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="KTS Connect Team"
-                android:textSize="30sp"
-                android:textStyle="bold"
-                android:textColor="#071E3D"
-                android:gravity="center"
-                android:layout_marginBottom="6dp" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Role Access"
-                android:textSize="16sp"
-                android:textColor="#5B6472"
-                android:gravity="center"
-                android:layout_marginBottom="22dp" />
-
-            <EditText
-                android:id="@+id/rolePinInput"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Enter PIN"
-                android:inputType="numberPassword"
-                android:background="#F5F7FA"
-                android:padding="14dp"
-                android:layout_marginBottom="14dp" />
-
-            <Button
-                android:id="@+id/enterBossButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Enter as Boss"
-                android:layout_marginBottom="10dp" />
-
-            <Button
-                android:id="@+id/enterManagerButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Enter as Manager"
-                android:layout_marginBottom="16dp" />
-
-            <TextView
-                android:id="@+id/loginStatusText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Test PINs: Boss 1234 / Manager 1111"
-                android:textSize="14sp"
-                android:textColor="#6B7280"
-                android:gravity="center" />
-
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/appContentBox"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/companyTitleText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Global Plaza"
-                android:textSize="30sp"
-                android:textStyle="bold"
-                android:textColor="#071E3D"
-                android:gravity="center"
-                android:layout_marginBottom="4dp" />
-
-            <TextView
-                android:id="@+id/subtitleText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="KTS Connect Team MVP"
-                android:textSize="15sp"
-                android:textColor="#5B6472"
-                android:gravity="center"
-                android:layout_marginBottom="12dp" />
-
-            <TextView
-                android:id="@+id/modeBadgeText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Mode loading..."
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:textColor="#071E3D"
-                android:gravity="center"
-                android:background="#FFFFFF"
-                android:padding="12dp"
-                android:layout_marginBottom="14dp" />
-
-            <Button
-                android:id="@+id/logoutButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Logout / Switch User"
-                android:layout_marginBottom="14dp" />
-
-            <TextView
-                android:id="@+id/dashboardSummaryText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Dashboard summary loading..."
-                android:textSize="18sp"
-                android:textColor="#111827"
-                android:background="#FFFFFF"
-                android:padding="18dp"
-                android:lineSpacingExtra="6dp"
-                android:layout_marginBottom="16dp" />
-
+            <!-- LOGIN SECTION -->
             <LinearLayout
-                android:id="@+id/managerActionBox"
+                android:id="@+id/loginSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="#FFFFFF"
-                android:padding="18dp"
-                android:layout_marginBottom="16dp">
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
 
                 <TextView
+                    android:id="@+id/loginAppTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Manager Attendance"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="#071E3D"
-                    android:layout_marginBottom="12dp" />
+                    android:gravity="center"
+                    android:text="KTS Connect Team"
+                    android:textColor="#FFFFFF"
+                    android:textSize="30sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/loginAppSubtitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:text="Business • Manager • Task • Attendance"
+                    android:textColor="#AFC1D8"
+                    android:textSize="14sp" />
 
                 <LinearLayout
+                    android:id="@+id/loginCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal">
+                    android:layout_marginTop="26dp"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Secure Login"
+                        android:textColor="#FFFFFF"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/loginHintText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="Boss uses 1234. Managers use their own PIN."
+                        android:textColor="#AFC1D8"
+                        android:textSize="14sp" />
+
+                    <EditText
+                        android:id="@+id/loginPinInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="16dp"
+                        android:hint="Enter PIN"
+                        android:inputType="numberPassword"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#AFC1D8"
+                        android:textSize="16sp" />
 
                     <Button
-                        android:id="@+id/checkInButton"
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Check In"
-                        android:layout_marginEnd="6dp" />
+                        android:id="@+id/bossLoginButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="16dp"
+                        android:textAllCaps="false"
+                        android:text="Login as Boss"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold" />
 
                     <Button
-                        android:id="@+id/checkOutButton"
-                        android:layout_width="0dp"
+                        android:id="@+id/managerLoginButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="10dp"
+                        android:textAllCaps="false"
+                        android:text="Login as Manager"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/loginInfoCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Check Out"
-                        android:layout_marginStart="6dp" />
+                        android:text="Businesses Added"
+                        android:textColor="#FFFFFF"
+                        android:textSize="17sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/loginBusinessListText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:lineSpacingExtra="3dp"
+                        android:text="Global Plaza — Hrishikesh\nKTS Farms &amp; Tours — Richard\nKTS Resorts — Riya"
+                        android:textColor="#D8E5F7"
+                        android:textSize="14sp" />
 
                 </LinearLayout>
 
             </LinearLayout>
 
+            <!-- BOSS SECTION -->
             <LinearLayout
-                android:id="@+id/assignTaskBox"
+                android:id="@+id/bossSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="#FFFFFF"
-                android:padding="18dp"
-                android:layout_marginBottom="16dp">
+                android:visibility="gone">
 
-                <TextView
+                <LinearLayout
+                    android:id="@+id/bossHeaderCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Boss Control Panel"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    android:textColor="#071E3D"
-                    android:layout_marginBottom="4dp" />
+                    android:orientation="vertical"
+                    android:padding="18dp">
 
-                <TextView
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/bossTitleText"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Boss Dashboard"
+                                android:textColor="#FFFFFF"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/bossSubtitleText"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Multi-Business Control Panel"
+                                android:textColor="#AFC1D8"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/bossDateText"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Today"
+                                android:textColor="#BFD7FF"
+                                android:textSize="12sp" />
+
+                        </LinearLayout>
+
+                        <Button
+                            android:id="@+id/bossLogoutButton"
+                            android:layout_width="92dp"
+                            android:layout_height="40dp"
+                            android:textAllCaps="false"
+                            android:text="Logout"
+                            android:textColor="#FFFFFF"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/bossBusinessCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Assign a new task to Manager 1"
-                    android:textSize="14sp"
-                    android:textColor="#6B7280"
-                    android:layout_marginBottom="14dp" />
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <EditText
-                    android:id="@+id/taskTitleInput"
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Select Business"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/bossBusinessSpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="12dp" />
+
+                    <TextView
+                        android:id="@+id/bossSelectedManagerText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="Manager: Hrishikesh"
+                        android:textColor="#D8E5F7"
+                        android:textSize="14sp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/bossStatsCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Task title"
-                    android:inputType="text"
-                    android:background="#F5F7FA"
-                    android:padding="14dp"
-                    android:layout_marginBottom="10dp" />
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="14dp">
 
-                <EditText
-                    android:id="@+id/taskDescriptionInput"
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Business Overview"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:id="@+id/bossCheckedInStatCard"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <TextView
+                                android:id="@+id/bossCheckedInCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#FFFFFF"
+                                android:textSize="25sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Checked In"
+                                android:textColor="#AFC1D8"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/bossPendingStatCard"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <TextView
+                                android:id="@+id/bossPendingCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#FFFFFF"
+                                android:textSize="25sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Pending"
+                                android:textColor="#AFC1D8"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:id="@+id/bossCompletedStatCard"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <TextView
+                                android:id="@+id/bossCompletedCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#FFFFFF"
+                                android:textSize="25sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Completed"
+                                android:textColor="#AFC1D8"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/bossHighStatCard"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <TextView
+                                android:id="@+id/bossHighCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#FFFFFF"
+                                android:textSize="25sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="High Priority"
+                                android:textColor="#AFC1D8"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/bossAssignCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Task description"
-                    android:inputType="textMultiLine"
-                    android:minLines="2"
-                    android:background="#F5F7FA"
-                    android:padding="14dp"
-                    android:layout_marginBottom="10dp" />
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <Spinner
-                    android:id="@+id/taskPrioritySpinner"
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Assign New Task"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <EditText
+                        android:id="@+id/bossTaskTitleInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="14dp"
+                        android:hint="Task title"
+                        android:paddingStart="14dp"
+                        android:paddingEnd="14dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#AFC1D8"
+                        android:textSize="15sp" />
+
+                    <EditText
+                        android:id="@+id/bossTaskDetailsInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="95dp"
+                        android:layout_marginTop="10dp"
+                        android:gravity="top"
+                        android:hint="Task details / instructions"
+                        android:inputType="textMultiLine"
+                        android:minLines="3"
+                        android:padding="14dp"
+                        android:textColor="#FFFFFF"
+                        android:textColorHint="#AFC1D8"
+                        android:textSize="15sp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Priority"
+                        android:textColor="#AFC1D8"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/bossPrioritySpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="6dp" />
+
+                    <Button
+                        android:id="@+id/bossDueDateButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="10dp"
+                        android:textAllCaps="false"
+                        android:text="Due Date"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold" />
+
+                    <Button
+                        android:id="@+id/bossAssignTaskButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="52dp"
+                        android:layout_marginTop="14dp"
+                        android:textAllCaps="false"
+                        android:text="Assign Task"
+                        android:textColor="#FFFFFF"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/bossFilterCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#F5F7FA"
-                    android:padding="14dp"
-                    android:layout_marginBottom="10dp" />
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <EditText
-                    android:id="@+id/taskDueDateInput"
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Task Filters"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="Status"
+                        android:textColor="#AFC1D8"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/bossStatusFilterSpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="6dp" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="Priority"
+                        android:textColor="#AFC1D8"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/bossPriorityFilterSpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="6dp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/bossTasksCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Select due date"
-                    android:inputType="none"
-                    android:focusable="false"
-                    android:clickable="true"
-                    android:background="#F5F7FA"
-                    android:padding="14dp"
-                    android:layout_marginBottom="12dp" />
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <Button
-                    android:id="@+id/assignTaskButton"
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Assigned Tasks"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/bossTaskList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/bossActivityCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Assign Task to Manager 1" />
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Recent Activity"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/bossActivityList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical" />
+
+                </LinearLayout>
 
             </LinearLayout>
 
-            <TextView
-                android:id="@+id/managerCardText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Manager details loading..."
-                android:textSize="17sp"
-                android:textColor="#111827"
-                android:background="#FFFFFF"
-                android:padding="18dp"
-                android:lineSpacingExtra="5dp"
-                android:layout_marginBottom="14dp" />
-
-            <TextView
-                android:id="@+id/attendanceCardText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Today's attendance loading..."
-                android:textSize="16sp"
-                android:textColor="#111827"
-                android:background="#FFFFFF"
-                android:padding="18dp"
-                android:lineSpacingExtra="5dp"
-                android:layout_marginBottom="14dp" />
-
-            <TextView
-                android:id="@+id/attendanceHistoryText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Attendance history loading..."
-                android:textSize="15sp"
-                android:textColor="#111827"
-                android:background="#FFFFFF"
-                android:padding="18dp"
-                android:lineSpacingExtra="5dp"
-                android:layout_marginBottom="14dp" />
-
-            <TextView
-                android:id="@+id/currentTaskText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Current task loading..."
-                android:textSize="16sp"
-                android:textColor="#111827"
-                android:background="#FFFFFF"
-                android:padding="18dp"
-                android:lineSpacingExtra="5dp"
-                android:layout_marginBottom="14dp" />
-
-            <TextView
-                android:id="@+id/taskSummaryText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Task summary loading..."
-                android:textSize="16sp"
-                android:textColor="#111827"
-                android:background="#FFFFFF"
-                android:padding="18dp"
-                android:lineSpacingExtra="5dp"
-                android:layout_marginBottom="14dp" />
-
+            <!-- MANAGER SECTION -->
             <LinearLayout
-                android:id="@+id/taskFilterBox"
+                android:id="@+id/managerSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="#FFFFFF"
-                android:padding="14dp"
-                android:layout_marginBottom="14dp">
+                android:visibility="gone">
 
-                <TextView
+                <LinearLayout
+                    android:id="@+id/managerHeaderCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Task Filters"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="#071E3D"
-                    android:layout_marginBottom="10dp" />
+                    android:orientation="vertical"
+                    android:padding="18dp">
 
-                <Button
-                    android:id="@+id/filterAllButton"
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/managerTitleText"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="Manager Dashboard"
+                                android:textColor="#FFFFFF"
+                                android:textSize="24sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/managerBusinessText"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Business"
+                                android:textColor="#AFC1D8"
+                                android:textSize="14sp" />
+
+                            <TextView
+                                android:id="@+id/managerDateText"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Today"
+                                android:textColor="#BFD7FF"
+                                android:textSize="12sp" />
+
+                        </LinearLayout>
+
+                        <Button
+                            android:id="@+id/managerLogoutButton"
+                            android:layout_width="92dp"
+                            android:layout_height="40dp"
+                            android:textAllCaps="false"
+                            android:text="Logout"
+                            android:textColor="#FFFFFF"
+                            android:textSize="12sp"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/managerAttendanceCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Show All Tasks"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
 
-                <Button
-                    android:id="@+id/filterPendingButton"
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="Attendance"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/managerNameText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Manager Name"
+                        android:textColor="#D8E5F7"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:id="@+id/managerAttendanceStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:lineSpacingExtra="3dp"
+                        android:text="Loading attendance..."
+                        android:textColor="#AFC1D8"
+                        android:textSize="15sp" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:orientation="horizontal">
+
+                        <Button
+                            android:id="@+id/managerCheckInButton"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:textAllCaps="false"
+                            android:text="Check In"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                        <Button
+                            android:id="@+id/managerCheckOutButton"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:textAllCaps="false"
+                            android:text="Check Out"
+                            android:textColor="#FFFFFF"
+                            android:textStyle="bold" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/managerStatsCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Show Pending Only"
-                    android:layout_marginBottom="8dp" />
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="14dp">
 
-                <Button
-                    android:id="@+id/filterCompletedButton"
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="My Work Summary"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:orientation="horizontal">
+
+                        <LinearLayout
+                            android:id="@+id/managerPendingStatCard"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="6dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <TextView
+                                android:id="@+id/managerPendingCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#FFFFFF"
+                                android:textSize="25sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Pending"
+                                android:textColor="#AFC1D8"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/managerCompletedStatCard"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="6dp"
+                            android:layout_weight="1"
+                            android:gravity="center"
+                            android:orientation="vertical"
+                            android:padding="14dp">
+
+                            <TextView
+                                android:id="@+id/managerCompletedCount"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textColor="#FFFFFF"
+                                android:textSize="25sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Completed"
+                                android:textColor="#AFC1D8"
+                                android:textSize="12sp"
+                                android:textStyle="bold" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/managerFilterCard"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Show Completed Only" />
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="My Task Filter"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <Spinner
+                        android:id="@+id/managerStatusFilterSpinner"
+                        android:layout_width="match_parent"
+                        android:layout_height="50dp"
+                        android:layout_marginTop="12dp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/managerTasksCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="My Tasks"
+                        android:textColor="#FFFFFF"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/managerTaskList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="vertical" />
+
+                </LinearLayout>
 
             </LinearLayout>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Task List"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#071E3D"
-                android:layout_marginBottom="10dp" />
-
-            <LinearLayout
-                android:id="@+id/taskListContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginBottom="18dp" />
-
-            <Button
-                android:id="@+id/reassignTaskButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Boss Set Current Task Pending"
-                android:layout_marginBottom="16dp" />
-
-            <TextView
-                android:id="@+id/statusText"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Live sync starting..."
-                android:textSize="14sp"
-                android:textColor="#5B6472"
-                android:gravity="center"
-                android:paddingBottom="18dp" />
 
         </LinearLayout>
 
-    </LinearLayout>
+    </ScrollView>
 
-</ScrollView>
+</FrameLayout>
